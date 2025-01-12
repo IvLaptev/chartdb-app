@@ -400,6 +400,12 @@ export const gu: LanguageTranslation = {
         language_select: {
             change_language: 'ભાષા બદલો',
         },
+
+        login: {
+            welcome_header: 'Hello!',
+            username_hint: 'Student ID',
+            login_btn: 'Login',
+        },
     },
 };
 

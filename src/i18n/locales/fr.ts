@@ -405,6 +405,12 @@ export const fr: LanguageTranslation = {
         language_select: {
             change_language: 'Langue',
         },
+
+        login: {
+            welcome_header: 'Hello!',
+            username_hint: 'Student ID',
+            login_btn: 'Login',
+        },
     },
 };
 

@@ -408,6 +408,12 @@ export const te: LanguageTranslation = {
         language_select: {
             change_language: 'భాష మార్చు',
         },
+
+        login: {
+            welcome_header: 'Hello!',
+            username_hint: 'Student ID',
+            login_btn: 'Login',
+        },
     },
 };
 

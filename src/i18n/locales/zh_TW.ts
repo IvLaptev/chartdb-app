@@ -392,6 +392,12 @@ export const zh_TW: LanguageTranslation = {
         language_select: {
             change_language: '變更語言',
         },
+
+        login: {
+            welcome_header: 'Hello!',
+            username_hint: 'Student ID',
+            login_btn: 'Login',
+        },
     },
 };
 

@@ -393,6 +393,12 @@ export const zh_CN: LanguageTranslation = {
         language_select: {
             change_language: '语言',
         },
+
+        login: {
+            welcome_header: 'Hello!',
+            username_hint: 'Student ID',
+            login_btn: 'Login',
+        },
     },
 };
 

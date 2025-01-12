@@ -398,6 +398,12 @@ export const ru: LanguageTranslation = {
         language_select: {
             change_language: 'Сменить язык',
         },
+
+        login: {
+            welcome_header: 'Добро пожаловать!',
+            username_hint: 'Шифр зачётной книжки',
+            login_btn: 'Войти',
+        },
     },
 };
 

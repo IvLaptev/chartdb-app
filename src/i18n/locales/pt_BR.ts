@@ -402,6 +402,12 @@ export const pt_BR: LanguageTranslation = {
         language_select: {
             change_language: 'Idioma',
         },
+
+        login: {
+            welcome_header: 'Hello!',
+            username_hint: 'Student ID',
+            login_btn: 'Login',
+        },
     },
 };
 
