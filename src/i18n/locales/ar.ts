@@ -397,6 +397,12 @@ export const ar: LanguageTranslation = {
         language_select: {
             change_language: 'اللغة',
         },
+
+        login: {
+            welcome_header: 'Hello!',
+            username_hint: 'Student ID',
+            login_btn: 'Login',
+        },
     },
 };
 

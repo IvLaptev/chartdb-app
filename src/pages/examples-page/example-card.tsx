@@ -17,6 +17,7 @@ import { useStorage } from '@/hooks/use-storage';
 import type { Diagram } from '@/lib/domain/diagram';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/hooks/use-theme';
+import { generateDiagramId } from '@/lib/utils';
 
 export interface ExampleCardProps {
     example: Example;
@@ -25,23 +26,22 @@ export interface ExampleCardProps {
 export const ExampleCard: React.FC<ExampleCardProps> = ({ example }) => {
     const navigate = useNavigate();
     const { effectiveTheme } = useTheme();
-    const { addDiagram, deleteDiagram } = useStorage();
+    const { addDiagram } = useStorage();
     const { diagram } = example;
     const utilizeExample = useCallback(async () => {
-        const { id } = diagram;
-
-        await deleteDiagram(id);
+        const id = generateDiagramId();
 
         const now = new Date();
         const diagramToAdd: Diagram = {
             ...diagram,
+            id: id,
             createdAt: now,
             updatedAt: now,
         };
 
         await addDiagram({ diagram: diagramToAdd });
         navigate(`/diagrams/${id}`);
-    }, [addDiagram, diagram, navigate, deleteDiagram]);
+    }, [addDiagram, diagram, navigate]);
     return (
         <div
             onClick={utilizeExample}

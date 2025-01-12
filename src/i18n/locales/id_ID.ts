@@ -399,6 +399,12 @@ export const id_ID: LanguageTranslation = {
         language_select: {
             change_language: 'Bahasa',
         },
+
+        login: {
+            welcome_header: 'Hello!',
+            username_hint: 'Student ID',
+            login_btn: 'Login',
+        },
     },
 };
 

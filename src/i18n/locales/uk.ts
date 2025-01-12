@@ -402,6 +402,12 @@ export const uk: LanguageTranslation = {
         language_select: {
             change_language: 'Мова',
         },
+
+        login: {
+            welcome_header: 'Hello!',
+            username_hint: 'Student ID',
+            login_btn: 'Login',
+        },
     },
 };
 

@@ -12,7 +12,10 @@ export interface StorageContext {
     updateConfig: (config: Partial<ChartDBConfig>) => Promise<void>;
 
     // Diagram operations
-    addDiagram: (params: { diagram: Diagram }) => Promise<void>;
+    addDiagram: (params: {
+        diagram: Diagram;
+        withSync?: boolean;
+    }) => Promise<void>;
     listDiagrams: (options?: {
         includeTables?: boolean;
         includeRelationships?: boolean;
@@ -30,7 +33,8 @@ export interface StorageContext {
         id: string;
         attributes: Partial<Diagram>;
     }) => Promise<void>;
-    deleteDiagram: (id: string) => Promise<void>;
+    deleteDiagram: (id: string, withSync?: boolean) => Promise<void>;
+    loadUserDiagrams: (userId: string) => Promise<void>;
 
     // Table operations
     addTable: (params: { diagramId: string; table: DBTable }) => Promise<void>;
@@ -97,6 +101,7 @@ export const storageInitialValue: StorageContext = {
     getDiagram: emptyFn,
     updateDiagram: emptyFn,
     deleteDiagram: emptyFn,
+    loadUserDiagrams: emptyFn,
 
     addTable: emptyFn,
     getTable: emptyFn,

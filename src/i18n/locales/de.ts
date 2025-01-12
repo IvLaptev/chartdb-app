@@ -404,6 +404,12 @@ export const de: LanguageTranslation = {
         language_select: {
             change_language: 'Sprache',
         },
+
+        login: {
+            welcome_header: 'Hello!',
+            username_hint: 'Student ID',
+            login_btn: 'Login',
+        },
     },
 };
 
