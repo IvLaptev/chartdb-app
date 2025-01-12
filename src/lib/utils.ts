@@ -10,7 +10,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const emptyFn = (): any => undefined;
+export const emptyFn = (): any => {
+    console.log('not implemented');
+    return undefined;
+};
 
 export const generateId = () => randomId();
 

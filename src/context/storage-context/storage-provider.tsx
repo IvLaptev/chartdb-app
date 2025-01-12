@@ -8,10 +8,18 @@ import type { DBRelationship } from '@/lib/domain/db-relationship';
 import { determineCardinalities } from '@/lib/domain/db-relationship';
 import type { ChartDBConfig } from '@/lib/domain/config';
 import type { DBDependency } from '@/lib/domain/db-dependency';
+import { useSecurity } from '@/hooks/use-security';
+import type { DBHistory } from '@/lib/domain/db-history';
+import {
+    diagramFromJSONInput,
+    diagramToJSONOutput,
+} from '@/lib/export-import-utils';
 
 export const StorageProvider: React.FC<React.PropsWithChildren> = ({
     children,
 }) => {
+    const { getUser } = useSecurity();
+
     const db = new Dexie('ChartDB') as Dexie & {
         diagrams: EntityTable<
             Diagram,
@@ -161,6 +169,59 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
         }
     });
 
+    // Init MIREA database
+    const mireaDB = new Dexie('HistoryDB') as Dexie & {
+        diagrams: EntityTable<
+            DBHistory,
+            'id' // primary key "id" (for the typings only)
+        >;
+    };
+
+    // Schema declaration:
+    mireaDB.version(1).stores({
+        diagrams: '++id, uid, metadata',
+    });
+
+    mireaDB.version(2).stores({
+        diagrams: '++id, uid, metadata, createdAt, updatedAt',
+    });
+
+    const syncDiagram = async (key: string) => {
+        const orig = await getDiagram(key, {
+            includeDependencies: true,
+            includeRelationships: true,
+            includeTables: true,
+        });
+
+        const meta = await mireaDB.diagrams.get(key);
+
+        if (!orig) {
+            if (meta) {
+                await mireaDB.diagrams.delete(key);
+            }
+            return;
+        }
+
+        const extra = btoa(diagramToJSONOutput(orig));
+
+        if (!meta) {
+            await mireaDB.diagrams.add({
+                id: key,
+                uid: btoa(getUser()!),
+                metadata: extra,
+                createdAt: orig.createdAt,
+                updatedAt: orig.updatedAt,
+            });
+            return;
+        }
+
+        meta.metadata = extra;
+        meta.updatedAt = orig.updatedAt;
+
+        await mireaDB.diagrams.update(key, meta);
+        return;
+    };
+
     const getConfig: StorageContext['getConfig'] = async (): Promise<
         ChartDBConfig | undefined
     > => {
@@ -175,41 +236,38 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
 
     const addDiagram: StorageContext['addDiagram'] = async ({
         diagram,
+        withSync = true,
     }: {
         diagram: Diagram;
+        withSync?: boolean;
     }) => {
-        const promises = [];
-        promises.push(
-            db.diagrams.add({
-                id: diagram.id,
-                name: diagram.name,
-                databaseType: diagram.databaseType,
-                databaseEdition: diagram.databaseEdition,
-                createdAt: diagram.createdAt,
-                updatedAt: diagram.updatedAt,
-            })
-        );
+        await db.diagrams.add({
+            id: diagram.id,
+            name: diagram.name,
+            databaseType: diagram.databaseType,
+            databaseEdition: diagram.databaseEdition,
+            createdAt: diagram.createdAt,
+            updatedAt: diagram.updatedAt,
+        });
 
         const tables = diagram.tables ?? [];
-        promises.push(
-            ...tables.map((table) => addTable({ diagramId: diagram.id, table }))
-        );
+        for (const table of tables) {
+            await addTable({ diagramId: diagram.id, table });
+        }
 
         const relationships = diagram.relationships ?? [];
-        promises.push(
-            ...relationships.map((relationship) =>
-                addRelationship({ diagramId: diagram.id, relationship })
-            )
-        );
+        for (const relationship of relationships) {
+            addRelationship({ diagramId: diagram.id, relationship });
+        }
 
         const dependencies = diagram.dependencies ?? [];
-        promises.push(
-            ...dependencies.map((dependency) =>
-                addDependency({ diagramId: diagram.id, dependency })
-            )
-        );
+        for (const dependency of dependencies) {
+            addDependency({ diagramId: diagram.id, dependency });
+        }
 
-        await Promise.all(promises);
+        if (withSync) {
+            await syncDiagram(diagram.id);
+        }
     };
 
     const listDiagrams: StorageContext['listDiagrams'] = async (
@@ -298,25 +356,25 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
         await db.diagrams.update(id, attributes);
 
         if (attributes.id) {
-            await Promise.all([
-                db.db_tables
-                    .where('diagramId')
-                    .equals(id)
-                    .modify({ diagramId: attributes.id }),
-                db.db_relationships
-                    .where('diagramId')
-                    .equals(id)
-                    .modify({ diagramId: attributes.id }),
-                db.db_dependencies
-                    .where('diagramId')
-                    .equals(id)
-                    .modify({ diagramId: attributes.id }),
-            ]);
+            await db.db_tables
+                .where('diagramId')
+                .equals(id)
+                .modify({ diagramId: attributes.id });
+            await db.db_relationships
+                .where('diagramId')
+                .equals(id)
+                .modify({ diagramId: attributes.id });
+            await db.db_dependencies
+                .where('diagramId')
+                .equals(id)
+                .modify({ diagramId: attributes.id });
         }
+        await syncDiagram(id);
     };
 
     const deleteDiagram: StorageContext['deleteDiagram'] = async (
-        id: string
+        id: string,
+        withSync: boolean = true
     ) => {
         await Promise.all([
             db.diagrams.delete(id),
@@ -324,6 +382,37 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
             db.db_relationships.where('diagramId').equals(id).delete(),
             db.db_dependencies.where('diagramId').equals(id).delete(),
         ]);
+        if (withSync) {
+            await syncDiagram(id);
+        }
+    };
+
+    const loadUserDiagrams: StorageContext['loadUserDiagrams'] = async (
+        userId: string
+    ) => {
+        const metadata = await mireaDB.diagrams
+            .where('uid')
+            .equals(btoa(userId))
+            .sortBy('updatedAt');
+
+        for (let i = 0; i < metadata.length; i++) {
+            if (!metadata[i].metadata) {
+                continue;
+            }
+
+            const diagram = diagramFromJSONInput(atob(metadata[i].metadata!));
+            diagram.id = metadata[i].id;
+            diagram.createdAt = metadata[i].createdAt;
+            diagram.updatedAt = metadata[i].updatedAt;
+
+            await addDiagram({
+                diagram: diagram,
+                withSync: false,
+            });
+        }
+        await updateConfig({
+            defaultDiagramId: metadata.pop()?.id,
+        });
     };
 
     const addTable: StorageContext['addTable'] = async ({
@@ -337,6 +426,7 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
             ...table,
             diagramId,
         });
+        await syncDiagram(diagramId);
     };
 
     const getTable: StorageContext['getTable'] = async ({
@@ -353,6 +443,7 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
         diagramId: string
     ) => {
         await db.db_tables.where('diagramId').equals(diagramId).delete();
+        await syncDiagram(diagramId);
     };
 
     const updateTable: StorageContext['updateTable'] = async ({
@@ -360,6 +451,8 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
         attributes,
     }) => {
         await db.db_tables.update(id, attributes);
+        const table = await db.db_tables.get(id);
+        await syncDiagram(table!.diagramId);
     };
 
     const putTable: StorageContext['putTable'] = async ({
@@ -367,6 +460,7 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
         table,
     }) => {
         await db.db_tables.put({ ...table, diagramId });
+        await syncDiagram(diagramId);
     };
 
     const deleteTable: StorageContext['deleteTable'] = async ({
@@ -377,6 +471,7 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
         diagramId: string;
     }) => {
         await db.db_tables.where({ id, diagramId }).delete();
+        await syncDiagram(diagramId);
     };
 
     const listTables: StorageContext['listTables'] = async (
@@ -402,6 +497,7 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
             ...relationship,
             diagramId,
         });
+        await syncDiagram(diagramId);
     };
 
     const deleteDiagramRelationships: StorageContext['deleteDiagramRelationships'] =
@@ -410,6 +506,7 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
                 .where('diagramId')
                 .equals(diagramId)
                 .delete();
+            await syncDiagram(diagramId);
         };
 
     const getRelationship: StorageContext['getRelationship'] = async ({
@@ -430,6 +527,8 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
         attributes: Partial<DBRelationship>;
     }) => {
         await db.db_relationships.update(id, attributes);
+        const relationship = await db.db_relationships.get(id);
+        await syncDiagram(relationship!.diagramId);
     };
 
     const deleteRelationship: StorageContext['deleteRelationship'] = async ({
@@ -440,6 +539,7 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
         diagramId: string;
     }) => {
         await db.db_relationships.where({ id, diagramId }).delete();
+        await syncDiagram(diagramId);
     };
 
     const listRelationships: StorageContext['listRelationships'] = async (
@@ -464,6 +564,7 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
             ...dependency,
             diagramId,
         });
+        await syncDiagram(diagramId);
     };
 
     const getDependency: StorageContext['getDependency'] = async ({
@@ -478,6 +579,8 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
         attributes,
     }) => {
         await db.db_dependencies.update(id, attributes);
+        const dep = await db.db_dependencies.get(id);
+        await syncDiagram(dep!.diagramId);
     };
 
     const deleteDependency: StorageContext['deleteDependency'] = async ({
@@ -485,6 +588,7 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
         id,
     }) => {
         await db.db_dependencies.where({ id, diagramId }).delete();
+        await syncDiagram(diagramId);
     };
 
     const listDependencies: StorageContext['listDependencies'] = async (
@@ -502,6 +606,7 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
                 .where('diagramId')
                 .equals(diagramId)
                 .delete();
+            await syncDiagram(diagramId);
         };
 
     return (
@@ -514,6 +619,7 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
                 getDiagram,
                 updateDiagram,
                 deleteDiagram,
+                loadUserDiagrams,
                 addTable,
                 getTable,
                 updateTable,
