@@ -155,7 +155,7 @@ export const ru: LanguageTranslation = {
                         change_schema: 'Изменить схему',
                         add_field: 'Добавить поле',
                         add_index: 'Добавить индекс',
-                        duplicate_table: 'Duplicate Table', // TODO: Translate
+                        duplicate_table: 'Дублировать таблицу',
                         delete_table: 'Удалить таблицу',
                     },
                 },
@@ -351,6 +351,7 @@ export const ru: LanguageTranslation = {
             title: 'Экспорт кода диаграммы',
             description: 'Выберите формат экспорта:',
             format_json: 'JSON',
+            format_code: 'CODE',
             cancel: 'Отменить',
             export: 'Экспортировать',
             error: {
@@ -370,6 +371,12 @@ export const ru: LanguageTranslation = {
                     'Код JSON диаграммы некорректен. Проверьте, пожалуйста, код и попробуйте снова. Проблема не решается? Напишите нам: chartdb.io@gmail.com',
             },
         },
+        show_paste_code_dialog: {
+            title: 'Код доступа',
+            description:
+                'Код доступа будет работать в течении одного месяца. По нему можно получить текущую диаграмму. Изменения диаграммы не будут синхронизироваться автоматически.',
+            ok: 'OK',
+        },
         relationship_type: {
             one_to_one: 'Один к одному',
             one_to_many: 'Один ко многим',
@@ -384,7 +391,7 @@ export const ru: LanguageTranslation = {
 
         table_node_context_menu: {
             edit_table: 'Изменить таблицу',
-            duplicate_table: 'Duplicate Table', // TODO: Translate
+            duplicate_table: 'Дублировать таблицу',
             delete_table: 'Удалить таблицу',
         },
 

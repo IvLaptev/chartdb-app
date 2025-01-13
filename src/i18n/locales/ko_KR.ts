@@ -350,6 +350,7 @@ export const ko_KR: LanguageTranslation = {
             title: '다이어그램 내보내기',
             description: '내보낼 형식을 선택해주세요:',
             format_json: 'JSON',
+            format_code: 'CODE',
             cancel: '취소',
             export: '내보내기',
             error: {
@@ -368,6 +369,12 @@ export const ko_KR: LanguageTranslation = {
                 description:
                     '다이어그램 JSON이 유효하지 않습니다. JSON이 올바른 형식인지 확인해주세요. 도움이 필요하신 경우 chartdb.io@gmail.com으로 연락해주세요.',
             },
+        },
+        show_paste_code_dialog: {
+            title: 'Access Code',
+            description:
+                'The access code will be valid for one month. You can use it to get the current chart. The changes will not sync automatically.',
+            ok: 'OK',
         },
         relationship_type: {
             one_to_one: '일대일 (1:1)',

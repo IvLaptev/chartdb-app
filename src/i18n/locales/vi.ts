@@ -350,6 +350,7 @@ export const vi: LanguageTranslation = {
             title: 'Xuất sơ đồ',
             description: 'Chọn định dạng để xuất:',
             format_json: 'JSON',
+            format_code: 'CODE',
             cancel: 'Hủy',
             export: 'Xuất',
             error: {
@@ -369,6 +370,13 @@ export const vi: LanguageTranslation = {
                 description:
                     'Sơ đồ ở dạng JSON không hợp lệ. Vui lòng kiểm tra JSON và thử lại. Bạn cần trợ giúp? chartdb.io@gmail.com',
             },
+        },
+
+        show_paste_code_dialog: {
+            title: 'Access Code',
+            description:
+                'The access code will be valid for one month. You can use it to get the current chart. The changes will not sync automatically.',
+            ok: 'OK',
         },
         relationship_type: {
             one_to_one: 'Quan hệ một-một',

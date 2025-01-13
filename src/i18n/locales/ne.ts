@@ -354,6 +354,7 @@ export const ne: LanguageTranslation = {
             title: 'डायाग्राम निर्यात गर्नुहोस्',
             description: 'निर्यात गर्नका लागि निर्यात फरम्याट छान्नुहोस:',
             format_json: 'JSON',
+            format_code: 'CODE',
             cancel: 'रद्द गर्नुहोस्',
             export: 'निर्यात गर्नुहोस्',
             error: {
@@ -373,6 +374,12 @@ export const ne: LanguageTranslation = {
                 description:
                     'डायाग्राम JSON अमान्य छ। कृपया JSON जाँच गर्नुहोस् र पुन: प्रयास गर्नुहोस्। मद्दत चाहिन्छ? chartdb.io@gmail.com मा सम्पर्क गर्नुहोस्',
             },
+        },
+        show_paste_code_dialog: {
+            title: 'Access Code',
+            description:
+                'The access code will be valid for one month. You can use it to get the current chart. The changes will not sync automatically.',
+            ok: 'OK',
         },
 
         relationship_type: {

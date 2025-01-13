@@ -345,6 +345,7 @@ export const zh_CN: LanguageTranslation = {
             title: '导出关系图',
             description: '选择导出格式：',
             format_json: 'JSON',
+            format_code: 'CODE',
             cancel: '取消',
             export: '导出',
             // TODO: translate
@@ -365,6 +366,13 @@ export const zh_CN: LanguageTranslation = {
                 description:
                     '关系图 JSON 无效，请检查 JSON 后重试。需要帮助？ 联系 chartdb.io@gmail.com',
             },
+        },
+
+        show_paste_code_dialog: {
+            title: 'Access Code',
+            description:
+                'The access code will be valid for one month. You can use it to get the current chart. The changes will not sync automatically.',
+            ok: 'OK',
         },
         relationship_type: {
             one_to_one: '一对一',

@@ -3,3 +3,4 @@ export const IS_CHARTDB_IO: boolean =
     import.meta.env.VITE_IS_CHARTDB_IO === 'true';
 export const APP_URL: string = import.meta.env.VITE_APP_URL;
 export const HOST_URL: string = import.meta.env.VITE_HOST_URL ?? '';
+export const PASTE_URL: string = import.meta.env.VITE_PASTE_URL ?? '';
