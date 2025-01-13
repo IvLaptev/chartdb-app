@@ -20,6 +20,7 @@ import { Spinner } from '@/components/spinner/spinner';
 import { waitFor } from '@/lib/utils';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/alert/alert';
+import { useSecurity } from '@/hooks/use-security';
 
 export interface ExportDiagramDialogProps extends BaseDialogProps {}
 
@@ -31,6 +32,7 @@ export const ExportDiagramDialog: React.FC<ExportDiagramDialogProps> = ({
     const [isLoading, setIsLoading] = useState(false);
     const { closeExportDiagramDialog } = useDialog();
     const [error, setError] = useState(false);
+    const { getUser } = useSecurity();
 
     useEffect(() => {
         if (!dialog.open) return;
@@ -43,7 +45,7 @@ export const ExportDiagramDialog: React.FC<ExportDiagramDialogProps> = ({
             const a = document.createElement('a');
             a.setAttribute('download', `ChartDB(${diagramName}).json`);
             a.setAttribute('href', dataUrl);
-            a.click();
+            // a.click();
         },
         [diagramName]
     );
@@ -53,6 +55,23 @@ export const ExportDiagramDialog: React.FC<ExportDiagramDialogProps> = ({
         await waitFor(1000);
         try {
             const json = diagramToJSONOutput(currentDiagram);
+
+            const encodedJson = btoa(json);
+
+            const headers = new Headers();
+            headers.append('x-user-id', btoa(getUser() ?? ''));
+            const resp = await fetch('http://localhost:8090/api/diagrams', {
+                method: 'POST',
+                body: JSON.stringify({
+                    content: encodedJson,
+                    client_diagram_id: currentDiagram.id.slice(8),
+                }),
+                headers: headers,
+            });
+
+            const text = await resp.text();
+            console.log(text);
+
             const blob = new Blob([json], { type: 'application/json' });
             const dataUrl = URL.createObjectURL(blob);
             downloadOutput(dataUrl);
@@ -64,7 +83,7 @@ export const ExportDiagramDialog: React.FC<ExportDiagramDialogProps> = ({
 
             throw e;
         }
-    }, [downloadOutput, currentDiagram, closeExportDiagramDialog]);
+    }, [downloadOutput, currentDiagram, closeExportDiagramDialog, getUser]);
 
     const outputTypeOptions: SelectBoxOption[] = useMemo(
         () =>
