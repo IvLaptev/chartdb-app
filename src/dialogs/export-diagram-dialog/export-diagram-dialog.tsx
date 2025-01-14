@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { diagramToJSONOutput } from '@/lib/export-import-utils';
 import { Spinner } from '@/components/spinner/spinner';
-import { waitFor } from '@/lib/utils';
+import { encodeUtf8ToBase64, waitFor } from '@/lib/utils';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/alert/alert';
 import { useSecurity } from '@/hooks/use-security';
@@ -74,10 +74,12 @@ export const ExportDiagramDialog: React.FC<ExportDiagramDialogProps> = ({
     const exportToCode = useCallback(async () => {
         setIsLoading(true);
         try {
-            const encodedJson = btoa(diagramToJSONOutput(currentDiagram));
+            const encodedJson = encodeUtf8ToBase64(
+                diagramToJSONOutput(currentDiagram)
+            );
 
             const headers = new Headers();
-            headers.append('x-user-id', btoa(getUser() ?? ''));
+            headers.append('x-user-id', encodeUtf8ToBase64(getUser() ?? ''));
             const resp = await fetch(`${PASTE_URL}/api/diagrams`, {
                 method: 'POST',
                 body: JSON.stringify({
