@@ -14,6 +14,7 @@ import {
     diagramFromJSONInput,
     diagramToJSONOutput,
 } from '@/lib/export-import-utils';
+import { decodeBase64ToUtf8, encodeUtf8ToBase64 } from '@/lib/utils';
 
 export const StorageProvider: React.FC<React.PropsWithChildren> = ({
     children,
@@ -202,12 +203,12 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
             return;
         }
 
-        const extra = btoa(diagramToJSONOutput(orig));
+        const extra = encodeUtf8ToBase64(diagramToJSONOutput(orig));
 
         if (!meta) {
             await mireaDB.diagrams.add({
                 id: key,
-                uid: btoa(getUser()!),
+                uid: encodeUtf8ToBase64(getUser()!),
                 metadata: extra,
                 createdAt: orig.createdAt,
                 updatedAt: orig.updatedAt,
@@ -392,7 +393,7 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
     ) => {
         const metadata = await mireaDB.diagrams
             .where('uid')
-            .equals(btoa(userId))
+            .equals(encodeUtf8ToBase64(userId))
             .sortBy('updatedAt');
 
         for (let i = 0; i < metadata.length; i++) {
@@ -400,7 +401,9 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
                 continue;
             }
 
-            const diagram = diagramFromJSONInput(atob(metadata[i].metadata!));
+            const diagram = diagramFromJSONInput(
+                decodeBase64ToUtf8(metadata[i].metadata!)
+            );
             diagram.id = metadata[i].id;
             diagram.createdAt = metadata[i].createdAt;
             diagram.updatedAt = metadata[i].updatedAt;

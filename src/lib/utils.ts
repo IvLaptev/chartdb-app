@@ -88,6 +88,15 @@ export const decodeBase64ToUtf8 = (base64: string) => {
     return decoder.decode(bytes);
 };
 
+export const encodeUtf8ToBase64 = (utf8: string) => {
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(utf8);
+
+    const binaryString = String.fromCharCode(...bytes);
+
+    return btoa(binaryString);
+};
+
 export const waitFor = async (ms: number): Promise<void> => {
     return new Promise((resolve) => setTimeout(resolve, ms));
 };
