@@ -25,13 +25,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.x
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
     
       - name: Install dependencies
         run: npm ci
@@ -42,18 +35,25 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v4
+      - name: Deploy JS
+        uses: prewk/s3-cp-action@v2
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=semver,pattern={{version}}
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          source: './dist'
+          aws_region: 'ru-central1'
+          aws_s3_endpoint: 'storage.yandexcloud.net'
+          dest: 's3://chartdb.mirea.dev'
+          flags: --recursive --include "*.js" --content-type "application/javascript"
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+      - name: Deploy Statics
+        uses: prewk/s3-cp-action@v2
         with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          source: './dist'
+          aws_region: 'ru-central1'
+          aws_s3_endpoint: 'storage.yandexcloud.net'
+          dest: 's3://chartdb.mirea.dev'
+          flags: --recursive --exclude "*.js"
+          
