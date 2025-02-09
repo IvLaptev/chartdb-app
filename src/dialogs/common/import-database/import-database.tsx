@@ -41,8 +41,7 @@ import {
     isStringMetadataJson,
 } from '@/lib/data/import-metadata/utils';
 
-const errorScriptOutputMessage =
-    'Invalid JSON. Please correct it or contact us at chartdb.io@gmail.com for help.';
+const errorScriptOutputMessage = 'Invalid JSON. Please correct it.';
 
 export interface ImportDatabaseProps {
     goBack?: () => void;

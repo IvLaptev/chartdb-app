@@ -6,6 +6,7 @@ import type { ExportSQLDialogProps } from '@/dialogs/export-sql-dialog/export-sq
 import type { ExportImageDialogProps } from '@/dialogs/export-image-dialog/export-image-dialog';
 import type { ExportDiagramDialogProps } from '@/dialogs/export-diagram-dialog/export-diagram-dialog';
 import type { ImportDiagramDialogProps } from '@/dialogs/import-diagram-dialog/import-diagram-dialog';
+import type { ShowPasteCodeDialogProps } from '@/dialogs/show-paste-code-dialog/show-paste-code-dialog';
 
 export interface DialogContext {
     // Create diagram dialog
@@ -61,6 +62,12 @@ export interface DialogContext {
         params: Omit<ImportDiagramDialogProps, 'dialog'>
     ) => void;
     closeImportDiagramDialog: () => void;
+
+    // Show paste code dialog
+    openShowPasteCodeDialog: (
+        params: Omit<ShowPasteCodeDialogProps, 'dialog'>
+    ) => void;
+    closeShowPasteCodeDialog: () => void;
 }
 
 export const dialogContext = createContext<DialogContext>({
@@ -86,4 +93,6 @@ export const dialogContext = createContext<DialogContext>({
     closeImportDiagramDialog: emptyFn,
     openBuckleDialog: emptyFn,
     closeBuckleDialog: emptyFn,
+    openShowPasteCodeDialog: emptyFn,
+    closeShowPasteCodeDialog: emptyFn,
 });

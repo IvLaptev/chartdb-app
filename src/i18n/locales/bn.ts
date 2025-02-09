@@ -353,6 +353,7 @@ export const bn: LanguageTranslation = {
             title: 'চিত্র রপ্তানি করুন',
             description: 'রপ্তানির জন্য ফরম্যাট নির্বাচন করুন:',
             format_json: 'JSON',
+            format_code: 'CODE',
             cancel: 'বাতিল করুন',
             export: 'রপ্তানি করুন',
             error: {
@@ -372,6 +373,12 @@ export const bn: LanguageTranslation = {
                 description:
                     'ডায়াগ্রাম JSON অবৈধ। অনুগ্রহ করে JSON পরীক্ষা করুন এবং আবার চেষ্টা করুন। সাহায্যের প্রয়োজন? chartdb.io@gmail.com-এ যোগাযোগ করুন।',
             },
+        },
+        show_paste_code_dialog: {
+            title: 'Access Code',
+            description:
+                'The access code will be valid for one month. You can use it to get the current chart. The changes will not sync automatically.',
+            ok: 'OK',
         },
         relationship_type: {
             one_to_one: 'এক থেকে এক',

@@ -314,6 +314,13 @@ export const ar: LanguageTranslation = {
             },
         },
 
+        show_paste_code_dialog: {
+            title: 'Access Code',
+            description:
+                'The access code will be valid for one month. You can use it to get the current chart. The changes will not sync automatically.',
+            ok: 'OK',
+        },
+
         export_image_dialog: {
             title: 'تصدير الصورة',
             description: ':اختر عامل المقياس للتصدير',
@@ -350,6 +357,7 @@ export const ar: LanguageTranslation = {
             title: 'تصدير المخطط',
             description: ':اختر التنسيق للتصدير',
             format_json: 'JSON',
+            format_code: 'CODE',
             cancel: 'إلغاء',
             export: 'تصدير',
             error: {

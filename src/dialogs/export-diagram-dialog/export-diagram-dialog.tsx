@@ -17,9 +17,11 @@ import { useTranslation } from 'react-i18next';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { diagramToJSONOutput } from '@/lib/export-import-utils';
 import { Spinner } from '@/components/spinner/spinner';
-import { waitFor } from '@/lib/utils';
+import { encodeUtf8ToBase64, waitFor } from '@/lib/utils';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/alert/alert';
+import { useSecurity } from '@/hooks/use-security';
+import { PASTE_URL } from '@/lib/env';
 
 export interface ExportDiagramDialogProps extends BaseDialogProps {}
 
@@ -29,8 +31,10 @@ export const ExportDiagramDialog: React.FC<ExportDiagramDialogProps> = ({
     const { t } = useTranslation();
     const { diagramName, currentDiagram } = useChartDB();
     const [isLoading, setIsLoading] = useState(false);
-    const { closeExportDiagramDialog } = useDialog();
+    const { closeExportDiagramDialog, openShowPasteCodeDialog } = useDialog();
     const [error, setError] = useState(false);
+    const { getUser } = useSecurity();
+    const [outputTypeOption, setOutputTypeOption] = useState<string>('code');
 
     useEffect(() => {
         if (!dialog.open) return;
@@ -48,11 +52,12 @@ export const ExportDiagramDialog: React.FC<ExportDiagramDialogProps> = ({
         [diagramName]
     );
 
-    const handleExport = useCallback(async () => {
+    const exportToJson = useCallback(async () => {
         setIsLoading(true);
         await waitFor(1000);
         try {
             const json = diagramToJSONOutput(currentDiagram);
+
             const blob = new Blob([json], { type: 'application/json' });
             const dataUrl = URL.createObjectURL(blob);
             downloadOutput(dataUrl);
@@ -66,9 +71,63 @@ export const ExportDiagramDialog: React.FC<ExportDiagramDialogProps> = ({
         }
     }, [downloadOutput, currentDiagram, closeExportDiagramDialog]);
 
+    const exportToCode = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const encodedJson = encodeUtf8ToBase64(
+                diagramToJSONOutput(currentDiagram)
+            );
+
+            const headers = new Headers();
+            headers.append('x-user-id', encodeUtf8ToBase64(getUser() ?? ''));
+            const resp = await fetch(`${PASTE_URL}/api/diagrams`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    content: encodedJson,
+                    client_diagram_id: currentDiagram.id.slice(8),
+                }),
+                headers: headers,
+            });
+
+            if (resp.status !== 200) {
+                throw 'failed to save diagram';
+            }
+            const respJSON = await resp.json();
+            const code = respJSON['code'];
+
+            setIsLoading(false);
+            closeExportDiagramDialog();
+            openShowPasteCodeDialog({ code: code });
+        } catch (e) {
+            console.log(e);
+            setError(true);
+            setIsLoading(false);
+
+            throw e;
+        }
+    }, [
+        currentDiagram,
+        getUser,
+        closeExportDiagramDialog,
+        openShowPasteCodeDialog,
+    ]);
+
+    const handleExport = useCallback(async () => {
+        switch (outputTypeOption) {
+            case 'json':
+                await exportToJson();
+                break;
+            case 'code':
+                await exportToCode();
+                break;
+            default:
+                break;
+        }
+    }, [outputTypeOption, exportToCode, exportToJson]);
+
     const outputTypeOptions: SelectBoxOption[] = useMemo(
         () =>
-            ['json'].map((format) => ({
+            ['code', 'json'].map((format) => ({
                 value: format,
                 label: t(`export_diagram_dialog.format_${format}`),
             })),
@@ -98,7 +157,10 @@ export const ExportDiagramDialog: React.FC<ExportDiagramDialogProps> = ({
                         <SelectBox
                             options={outputTypeOptions}
                             multiple={false}
-                            value="json"
+                            value={outputTypeOption}
+                            onChange={(value) =>
+                                setOutputTypeOption(value as string)
+                            }
                         />
                     </div>
                     {error ? (

@@ -13,12 +13,15 @@ import {
 import { Button } from '@/components/button/button';
 import type { BaseDialogProps } from '../common/base-dialog-props';
 import { useTranslation } from 'react-i18next';
-import { FileUploader } from '@/components/file-uploader/file-uploader';
 import { useStorage } from '@/hooks/use-storage';
 import { useNavigate } from 'react-router-dom';
 import { diagramFromJSONInput } from '@/lib/export-import-utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/alert/alert';
 import { AlertCircle } from 'lucide-react';
+import { Input } from '@/components/input/input';
+import { decodeBase64ToUtf8, encodeUtf8ToBase64 } from '@/lib/utils';
+import { PASTE_URL } from '@/lib/env';
+import { useSecurity } from '@/hooks/use-security';
 
 export interface ImportDiagramDialogProps extends BaseDialogProps {}
 
@@ -26,53 +29,70 @@ export const ImportDiagramDialog: React.FC<ImportDiagramDialogProps> = ({
     dialog,
 }) => {
     const { t } = useTranslation();
-    const [file, setFile] = useState<File | null>(null);
+    const [code, setCode] = useState<string | null>(null);
     const { addDiagram } = useStorage();
     const navigate = useNavigate();
     const [error, setError] = useState(false);
+    const { getUser } = useSecurity();
 
-    const onFileChange = useCallback((files: File[]) => {
-        if (files.length === 0) {
-            setFile(null);
+    const onCodeChange = useCallback((code: string) => {
+        if (code.length === 0) {
+            setCode(null);
             return;
         }
 
-        setFile(files[0]);
+        setCode(code);
     }, []);
 
     useEffect(() => {
         if (!dialog.open) return;
         setError(false);
-        setFile(null);
+        setCode(null);
     }, [dialog.open]);
     const { closeImportDiagramDialog, closeCreateDiagramDialog } = useDialog();
 
-    const handleImport = useCallback(() => {
-        if (!file) return;
+    const handleImport = useCallback(async () => {
+        if (!code) return;
 
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const json = e.target?.result;
-            if (typeof json !== 'string') return;
+        try {
+            const headers = new Headers();
+            headers.append('x-user-id', encodeUtf8ToBase64(getUser() ?? ''));
+            const resp = await fetch(`${PASTE_URL}/api/diagrams/${code}`, {
+                method: 'GET',
+                headers: headers,
+            });
 
-            try {
-                const diagram = diagramFromJSONInput(json);
-
-                await addDiagram({ diagram });
-
-                closeImportDiagramDialog();
-                closeCreateDiagramDialog();
-
-                navigate(`/diagrams/${diagram.id}`);
-            } catch (e) {
-                setError(true);
-
-                throw e;
+            if (resp.status !== 200) {
+                throw 'failed to save diagram';
             }
-        };
-        reader.readAsText(file);
+            const respJSON = await resp.json();
+            const encodedDiagram = respJSON['content'];
+
+            console.log(encodedDiagram);
+            console.log(decodeBase64ToUtf8(encodedDiagram));
+            console.log(
+                diagramFromJSONInput(decodeBase64ToUtf8(encodedDiagram))
+            );
+
+            const diagram = diagramFromJSONInput(
+                decodeBase64ToUtf8(encodedDiagram)
+            );
+
+            await addDiagram({ diagram });
+
+            closeImportDiagramDialog();
+            closeCreateDiagramDialog();
+
+            navigate(`/diagrams/${diagram.id}`);
+        } catch (e) {
+            console.log(e);
+            setError(true);
+
+            throw e;
+        }
     }, [
-        file,
+        code,
+        getUser,
         addDiagram,
         navigate,
         closeImportDiagramDialog,
@@ -99,9 +119,11 @@ export const ImportDiagramDialog: React.FC<ImportDiagramDialogProps> = ({
                 </DialogHeader>
                 <DialogInternalContent>
                     <div className="flex flex-col p-1">
-                        <FileUploader
-                            supportedExtensions={['.json']}
-                            onFilesChange={onFileChange}
+                        <Input
+                            type="text"
+                            className="h-24 text-center font-mono text-5xl uppercase tracking-widest focus-visible:ring-0"
+                            maxLength={4}
+                            onChange={(e) => onCodeChange(e.target.value)}
                         />
                         {error ? (
                             <Alert variant="destructive" className="mt-2">
@@ -124,7 +146,10 @@ export const ImportDiagramDialog: React.FC<ImportDiagramDialogProps> = ({
                             {t('import_diagram_dialog.cancel')}
                         </Button>
                     </DialogClose>
-                    <Button onClick={handleImport} disabled={file === null}>
+                    <Button
+                        onClick={handleImport}
+                        disabled={code === null || code.length !== 4}
+                    >
                         {t('import_diagram_dialog.import')}
                     </Button>
                 </DialogFooter>

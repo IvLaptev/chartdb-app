@@ -18,6 +18,8 @@ import { ExportImageDialog } from '@/dialogs/export-image-dialog/export-image-di
 import { ExportDiagramDialog } from '@/dialogs/export-diagram-dialog/export-diagram-dialog';
 import { ImportDiagramDialog } from '@/dialogs/import-diagram-dialog/import-diagram-dialog';
 import { BuckleDialog } from '@/dialogs/buckle-dialog/buckle-dialog';
+import type { ShowPasteCodeDialogProps } from '@/dialogs/show-paste-code-dialog/show-paste-code-dialog';
+import { ShowPasteCodeDialog } from '@/dialogs/show-paste-code-dialog/show-paste-code-dialog';
 
 export const DialogProvider: React.FC<React.PropsWithChildren> = ({
     children,
@@ -96,6 +98,23 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
     const [openImportDiagramDialog, setOpenImportDiagramDialog] =
         useState(false);
 
+    // Show paste code dialog
+    const [openShowPasteCodeDialog, setOpenShowPasteCodeDialog] =
+        useState(false);
+    const [showPasteCodeDialogParams, setShowPasteCodeDialogParams] = useState<
+        Omit<ShowPasteCodeDialogProps, 'dialog'>
+    >({
+        code: '',
+    });
+    const openShowPasteCodeDialogHandler: DialogContext['openShowPasteCodeDialog'] =
+        useCallback(
+            ({ code }) => {
+                setShowPasteCodeDialogParams({ code });
+                setOpenShowPasteCodeDialog(true);
+            },
+            [setOpenShowPasteCodeDialog]
+        );
+
     return (
         <dialogContext.Provider
             value={{
@@ -126,6 +145,9 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
                 openImportDiagramDialog: () => setOpenImportDiagramDialog(true),
                 closeImportDiagramDialog: () =>
                     setOpenImportDiagramDialog(false),
+                openShowPasteCodeDialog: openShowPasteCodeDialogHandler,
+                closeShowPasteCodeDialog: () =>
+                    setOpenShowPasteCodeDialog(false),
             }}
         >
             {children}
@@ -154,6 +176,10 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
             <ExportDiagramDialog dialog={{ open: openExportDiagramDialog }} />
             <ImportDiagramDialog dialog={{ open: openImportDiagramDialog }} />
             <BuckleDialog dialog={{ open: openBuckleDialog }} />
+            <ShowPasteCodeDialog
+                dialog={{ open: openShowPasteCodeDialog }}
+                {...showPasteCodeDialogParams}
+            />
         </dialogContext.Provider>
     );
 };

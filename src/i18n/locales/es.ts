@@ -355,6 +355,7 @@ export const es: LanguageTranslation = {
             title: 'Export Diagram',
             description: 'Choose the format for export:',
             format_json: 'JSON',
+            format_code: 'CODE',
             cancel: 'Cancel',
             export: 'Export',
             error: {
@@ -374,6 +375,12 @@ export const es: LanguageTranslation = {
                 description:
                     'The diagram JSON is invalid. Please check the JSON and try again. Need help? chartdb.io@gmail.com',
             },
+        },
+        show_paste_code_dialog: {
+            title: 'Access Code',
+            description:
+                'The access code will be valid for one month. You can use it to get the current chart. The changes will not sync automatically.',
+            ok: 'OK',
         },
         relationship_type: {
             one_to_one: 'Uno a Uno',

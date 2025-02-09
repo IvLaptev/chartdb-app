@@ -353,6 +353,7 @@ export const gu: LanguageTranslation = {
             title: 'ડાયાગ્રામ નિકાસ કરો',
             description: 'નિકાસ માટે ફોર્મેટ પસંદ કરો:',
             format_json: 'JSON',
+            format_code: 'CODE',
             cancel: 'રદ કરો',
             export: 'નિકાસ કરો',
             error: {
@@ -372,6 +373,12 @@ export const gu: LanguageTranslation = {
                 description:
                     'ડાયાગ્રામ JSON અમાન્ય છે. કૃપા કરીને JSON તપાસો અને ફરી પ્રયાસ કરો. મદદ જોઈએ? chartdb.io@gmail.com પર સંપર્ક કરો.',
             },
+        },
+        show_paste_code_dialog: {
+            title: 'Access Code',
+            description:
+                'The access code will be valid for one month. You can use it to get the current chart. The changes will not sync automatically.',
+            ok: 'OK',
         },
         relationship_type: {
             one_to_one: 'એકથી એક',

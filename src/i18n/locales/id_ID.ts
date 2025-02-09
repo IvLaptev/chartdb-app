@@ -351,6 +351,7 @@ export const id_ID: LanguageTranslation = {
             title: 'Ekspor Diagram',
             description: 'Pilih format untuk ekspor:',
             format_json: 'JSON',
+            format_code: 'CODE',
             cancel: 'Batal',
             export: 'Ekspor',
             error: {
@@ -370,6 +371,12 @@ export const id_ID: LanguageTranslation = {
                 description:
                     'Diagram JSON tidak valid. Silakan cek JSON dan coba lagi. Butuh bantuan? chartdb.io@gmail.com',
             },
+        },
+        show_paste_code_dialog: {
+            title: 'Access Code',
+            description:
+                'The access code will be valid for one month. You can use it to get the current chart. The changes will not sync automatically.',
+            ok: 'OK',
         },
 
         relationship_type: {
