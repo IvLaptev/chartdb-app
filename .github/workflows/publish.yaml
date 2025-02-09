@@ -33,7 +33,7 @@ jobs:
         run: npm run lint
 
       - name: Build project
-        run: npm run build
+        run: VITE_PASTE_URL=https://${{ secrets.API_URL }} npm run build
 
       - name: Deploy JS
         uses: prewk/s3-cp-action@v2
