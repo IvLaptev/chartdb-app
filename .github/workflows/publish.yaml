@@ -42,7 +42,7 @@ jobs:
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           source: './dist'
           aws_region: 'ru-central1'
-          aws_s3_endpoint: 'storage.yandexcloud.net'
+          aws_s3_endpoint: 'https://storage.yandexcloud.net'
           dest: 's3://chartdb.mirea.dev'
           flags: --recursive --include "*.js" --content-type "application/javascript"
 
@@ -53,7 +53,7 @@ jobs:
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           source: './dist'
           aws_region: 'ru-central1'
-          aws_s3_endpoint: 'storage.yandexcloud.net'
+          aws_s3_endpoint: 'https://storage.yandexcloud.net'
           dest: 's3://chartdb.mirea.dev'
           flags: --recursive --exclude "*.js"
           
