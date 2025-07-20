@@ -1140,20 +1140,20 @@ export const ChartDBProvider: React.FC<
                 options = { updateHistory: true }
             ) => {
                 const prevRelationship = getRelationship(id);
-                setRelationships((relationships) =>
-                    relationships.map((r) =>
-                        r.id === id ? { ...r, ...relationship } : r
-                    )
-                );
+
+                setRelationships((relationships) => [
+                    ...relationships.filter((r) => r.id !== id),
+                    { ...prevRelationship, ...relationship } as DBRelationship,
+                ]);
 
                 const updatedAt = new Date();
                 setDiagramUpdatedAt(updatedAt);
                 await Promise.all([
+                    db.updateRelationship({ id, attributes: relationship }),
                     db.updateDiagram({
                         id: diagramId,
                         attributes: { updatedAt },
                     }),
-                    db.updateRelationship({ id, attributes: relationship }),
                 ]);
 
                 if (!!prevRelationship && options.updateHistory) {
