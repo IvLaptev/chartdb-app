@@ -35,6 +35,15 @@ jobs:
       - name: Build project
         run: VITE_PASTE_URL=https://${{ secrets.API_URL }} npm run build
 
+      - name: Await Manual Approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: ivlaptev
+          minimum-approvals: 1
+          issue-title: "Manual Approval Required for Terraform Apply"
+          issue-body: "Please approve or deny the deployment."
+
       - name: Deploy JS
         uses: prewk/s3-cp-action@v2
         with:
