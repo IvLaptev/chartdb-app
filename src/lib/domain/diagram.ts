@@ -29,6 +29,7 @@ export interface Diagram {
     dependencies?: DBDependency[];
     createdAt: Date;
     updatedAt: Date;
+    savedAt?: Date;
 }
 
 export const diagramSchema: z.ZodType<Diagram> = z.object({

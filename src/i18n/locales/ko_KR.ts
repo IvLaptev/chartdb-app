@@ -356,7 +356,7 @@ export const ko_KR: LanguageTranslation = {
             error: {
                 title: '다이어그램 내보내기 오류',
                 description:
-                    '무언가 문제가 발생하였습니다. 도움이 필요하신 경우 chartdb.io@gmail.com으로 연락해주세요.',
+                    '무언가 문제가 발생하였습니다. 도움이 필요하신 경우 chartdb@ya.ru으로 연락해주세요.',
             },
         },
         import_diagram_dialog: {
@@ -367,7 +367,7 @@ export const ko_KR: LanguageTranslation = {
             error: {
                 title: '다이어그램 가져오기 오류',
                 description:
-                    '다이어그램 JSON이 유효하지 않습니다. JSON이 올바른 형식인지 확인해주세요. 도움이 필요하신 경우 chartdb.io@gmail.com으로 연락해주세요.',
+                    '다이어그램 JSON이 유효하지 않습니다. JSON이 올바른 형식인지 확인해주세요. 도움이 필요하신 경우 chartdb@ya.ru으로 연락해주세요.',
             },
         },
         show_paste_code_dialog: {
@@ -406,8 +406,21 @@ export const ko_KR: LanguageTranslation = {
 
         login: {
             welcome_header: 'Hello!',
-            username_hint: 'Student ID',
+            username_guest_hint: 'Student ID',
+            username_student_hint: 'Student email',
+            password_hint: 'Password',
             login_btn: 'Login',
+            login_as_guest_btn: 'Login as Guest',
+            login_as_student_btn: 'I have account',
+            signup_btn: 'Signup',
+            or: 'or',
+            registration_login_hint: 'student@edu.mirea.ru',
+            registration_password_hint: 'Password',
+            password_error: 'Password must be at least 8 characters long',
+            username_error: 'Email must be in domain edu.mirea.ru or mirea.ru',
+            successful_registration:
+                'Confirm your registration in the email sent to your inbox',
+            successful_confirmation: 'Registration successfully confirmed your',
         },
     },
 };

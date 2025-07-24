@@ -18,7 +18,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/table/table';
-import { useConfig } from '@/hooks/use-config';
 import { useDialog } from '@/hooks/use-dialog';
 import { useStorage } from '@/hooks/use-storage';
 import type { Diagram } from '@/lib/domain/diagram';
@@ -26,6 +25,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import type { BaseDialogProps } from '../common/base-dialog-props';
+import { useQuery } from 'react-query';
 
 export interface OpenDiagramDialogProps extends BaseDialogProps {}
 
@@ -34,7 +34,6 @@ export const OpenDiagramDialog: React.FC<OpenDiagramDialogProps> = ({
 }) => {
     const { closeOpenDiagramDialog } = useDialog();
     const { t } = useTranslation();
-    const { updateConfig } = useConfig();
     const navigate = useNavigate();
     const { listDiagrams } = useStorage();
     const [diagrams, setDiagrams] = useState<Diagram[]>([]);
@@ -42,25 +41,32 @@ export const OpenDiagramDialog: React.FC<OpenDiagramDialogProps> = ({
         string | undefined
     >();
 
+    const { data: fetchedDiagrams, isLoading: isDiagramsLoading } = useQuery(
+        [dialog.open],
+        async (): Promise<Diagram[]> => {
+            return await listDiagrams({ includeTables: true });
+        }
+    );
+
     useEffect(() => {
         setSelectedDiagramId(undefined);
     }, [dialog.open]);
 
     useEffect(() => {
         const fetchDiagrams = async () => {
-            const diagrams = await listDiagrams({ includeTables: true });
-            setDiagrams(
-                diagrams.sort(
-                    (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()
-                )
-            );
+            if (fetchedDiagrams) {
+                setDiagrams(
+                    fetchedDiagrams.sort(
+                        (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()
+                    )
+                );
+            }
         };
         fetchDiagrams();
-    }, [listDiagrams, setDiagrams, dialog.open]);
+    }, [fetchedDiagrams, isDiagramsLoading, setDiagrams, dialog.open]);
 
     const openDiagram = (diagramId: string) => {
         if (diagramId) {
-            updateConfig({ defaultDiagramId: diagramId });
             navigate(`/diagrams/${diagramId}`);
         }
     };

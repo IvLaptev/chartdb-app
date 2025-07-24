@@ -7,7 +7,6 @@ import React, {
 } from 'react';
 import { TopNavbar } from './top-navbar/top-navbar';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useConfig } from '@/hooks/use-config';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useDialog } from '@/hooks/use-dialog';
 import { useRedoUndoStack } from '@/hooks/use-redo-undo-stack';
@@ -37,13 +36,12 @@ import { Spinner } from '@/components/spinner/spinner';
 import { Helmet } from 'react-helmet-async';
 import { useStorage } from '@/hooks/use-storage';
 import { AlertProvider } from '@/context/alert-context/alert-provider';
-
-const OPEN_STAR_US_AFTER_SECONDS = 30;
-const SHOW_STAR_US_AGAIN_AFTER_DAYS = 1;
-
-const OPEN_BUCKLE_AFTER_SECONDS = 60;
-const SHOW_BUCKLE_AGAIN_AFTER_DAYS = 1;
-const SHOW_BUCKLE_AGAIN_OPENED_AFTER_DAYS = 7;
+import { useSecurity } from '@/hooks/use-security';
+import { PASTE_URL } from '@/lib/env';
+import { toast as newToast } from 'react-toastify';
+import { diagramFromJSONInput } from '@/lib/export-import-utils';
+import { decodeBase64ToUtf8 } from '@/lib/utils';
+import { useQuery } from 'react-query';
 
 export const EditorDesktopLayoutLazy = React.lazy(
     () => import('./editor-desktop-layout')
@@ -54,6 +52,8 @@ export const EditorMobileLayoutLazy = React.lazy(
 );
 
 const EditorPageComponent: React.FC = () => {
+    const security = useSecurity();
+
     const {
         loadDiagram,
         diagramName,
@@ -64,139 +64,155 @@ const EditorPageComponent: React.FC = () => {
     const { openSelectSchema, showSidePanel } = useLayout();
     const { resetRedoStack, resetUndoStack } = useRedoUndoStack();
     const { showLoader, hideLoader } = useFullScreenLoader();
-    const { openCreateDiagramDialog, openStarUsDialog, openBuckleDialog } =
-        useDialog();
+    const { openCreateDiagramDialog, openOpenDiagramDialog } = useDialog();
     const { diagramId } = useParams<{ diagramId: string }>();
-    const { config, updateConfig } = useConfig();
     const navigate = useNavigate();
     const { isMd: isDesktop } = useBreakpoint('md');
     const [initialDiagram, setInitialDiagram] = useState<Diagram | undefined>();
-    const {
-        hideMultiSchemaNotification,
-        setHideMultiSchemaNotification,
-        starUsDialogLastOpen,
-        setStarUsDialogLastOpen,
-        githubRepoOpened,
-        setBuckleDialogLastOpen,
-        buckleDialogLastOpen,
-        buckleWaitlistOpened,
-    } = useLocalConfig();
+    const { hideMultiSchemaNotification, setHideMultiSchemaNotification } =
+        useLocalConfig();
     const { toast } = useToast();
     const { t } = useTranslation();
-    const { listDiagrams } = useStorage();
+    const {
+        listDiagrams,
+        addDiagram,
+        getDiagram,
+        deleteDiagram,
+        loadUserDiagrams,
+    } = useStorage();
+    const [usedDiagram, setUsedDiagram] = useState<Diagram | undefined>();
+
+    const { isLoading: isUserDiagramsLoading } = useQuery(
+        security.getUser()!,
+        async () => {
+            if (security.getUserType() === 'GUEST') {
+                const diagrams = await listDiagrams();
+                if (diagrams.length === 0) {
+                    await loadUserDiagrams(security.getUser()!);
+                }
+            }
+        }
+    );
+
+    const { isLoading: isDiagramLoading } = useQuery(
+        [diagramId],
+        async (): Promise<Diagram | undefined> => {
+            const id = diagramId || currentDiagram?.id;
+
+            if (!id) {
+                setUsedDiagram(undefined);
+                return;
+            }
+
+            if (usedDiagram?.id === id) {
+                return;
+            }
+
+            let diagram: Diagram | undefined;
+            if (security.getUserType() !== 'GUEST') {
+                const response = await fetch(
+                    `${PASTE_URL}/chartdb/v1/diagrams/${id}`,
+                    {
+                        headers: security.getAuthorizationHeader(),
+                    }
+                );
+
+                const data = await response.json();
+                if (!response.ok) {
+                    newToast.error(data['details'] || data['message']);
+                    navigate('/');
+                    return;
+                }
+
+                diagram = diagramFromJSONInput(
+                    decodeBase64ToUtf8(data.content)
+                );
+                diagram.id = id;
+
+                if (await getDiagram(id)) {
+                    await deleteDiagram(id, false, true);
+                }
+
+                await addDiagram({ diagram, withSync: false });
+            }
+
+            diagram = await loadDiagram(id);
+
+            if (diagram) {
+                setUsedDiagram(diagram);
+                navigate(`/diagrams/${id}`);
+            } else {
+                navigate('/');
+            }
+        }
+    );
 
     useEffect(() => {
-        if (!config) {
+        if (isDiagramLoading || isUserDiagramsLoading) {
             return;
         }
 
-        if (currentDiagram?.id === diagramId) {
-            return;
-        }
-
-        const loadDefaultDiagram = async () => {
-            if (diagramId) {
+        const openDiagram = async () => {
+            if (
+                diagramId &&
+                currentDiagram?.id !== diagramId &&
+                diagramId === usedDiagram?.id
+            ) {
                 setInitialDiagram(undefined);
                 showLoader();
                 resetRedoStack();
                 resetUndoStack();
-                const diagram = await loadDiagram(diagramId);
-                if (!diagram) {
-                    if (currentDiagram?.id) {
-                        await updateConfig({
-                            defaultDiagramId: currentDiagram.id,
-                        });
-                        navigate(`/diagrams/${currentDiagram.id}`);
-                    } else {
-                        navigate('/');
-                    }
-                }
-                setInitialDiagram(diagram);
+                setInitialDiagram(usedDiagram);
                 hideLoader();
-            } else if (!diagramId && config.defaultDiagramId) {
-                const diagram = await loadDiagram(config.defaultDiagramId);
-                if (!diagram) {
-                    await updateConfig({
-                        defaultDiagramId: '',
-                    });
-                    navigate('/');
-                } else {
-                    navigate(`/diagrams/${config.defaultDiagramId}`);
-                }
-            } else {
+            }
+        };
+        openDiagram();
+    }, [
+        diagramId,
+        isDiagramLoading,
+        isUserDiagramsLoading,
+        usedDiagram?.id,
+        currentDiagram?.id,
+        resetRedoStack,
+        resetUndoStack,
+        showLoader,
+        hideLoader,
+        setInitialDiagram,
+        usedDiagram,
+    ]);
+
+    useEffect(() => {
+        if (isDiagramLoading || isUserDiagramsLoading) {
+            return;
+        }
+
+        const startUp = async () => {
+            if (!usedDiagram && !diagramId) {
                 const diagrams = await listDiagrams();
 
                 if (diagrams.length > 0) {
-                    const defaultDiagramId = diagrams[0].id;
-                    await updateConfig({ defaultDiagramId });
-                    navigate(`/diagrams/${defaultDiagramId}`);
+                    if (security.getUserType() !== 'GUEST') {
+                        openOpenDiagramDialog();
+                    } else {
+                        const defaultDiagramId = diagrams[0].id;
+                        navigate(`/diagrams/${defaultDiagramId}`);
+                    }
                 } else {
                     openCreateDiagramDialog();
                 }
             }
         };
-        loadDefaultDiagram();
+        startUp();
     }, [
         diagramId,
-        openCreateDiagramDialog,
-        config,
-        navigate,
+        usedDiagram,
+        isDiagramLoading,
+        isUserDiagramsLoading,
         listDiagrams,
-        loadDiagram,
-        resetRedoStack,
-        resetUndoStack,
-        hideLoader,
-        showLoader,
-        currentDiagram?.id,
-        updateConfig,
-    ]);
-
-    useEffect(() => {
-        if (!currentDiagram?.id || githubRepoOpened) {
-            return;
-        }
-
-        if (
-            new Date().getTime() - starUsDialogLastOpen >
-            1000 * 60 * 60 * 24 * SHOW_STAR_US_AGAIN_AFTER_DAYS
-        ) {
-            const lastOpen = new Date().getTime();
-            setStarUsDialogLastOpen(lastOpen);
-            setTimeout(openStarUsDialog, OPEN_STAR_US_AFTER_SECONDS * 1000);
-        }
-    }, [
-        currentDiagram?.id,
-        githubRepoOpened,
-        openStarUsDialog,
-        setStarUsDialogLastOpen,
-        starUsDialogLastOpen,
-    ]);
-
-    useEffect(() => {
-        if (!currentDiagram?.id) {
-            return;
-        }
-
-        if (
-            new Date().getTime() - buckleDialogLastOpen >
-            1000 *
-                60 *
-                60 *
-                24 *
-                (buckleWaitlistOpened
-                    ? SHOW_BUCKLE_AGAIN_OPENED_AFTER_DAYS
-                    : SHOW_BUCKLE_AGAIN_AFTER_DAYS)
-        ) {
-            const lastOpen = new Date().getTime();
-            setBuckleDialogLastOpen(lastOpen);
-            setTimeout(openBuckleDialog, OPEN_BUCKLE_AFTER_SECONDS * 1000);
-        }
-    }, [
-        currentDiagram?.id,
-        buckleWaitlistOpened,
-        openBuckleDialog,
-        setBuckleDialogLastOpen,
-        buckleDialogLastOpen,
+        openOpenDiagramDialog,
+        openCreateDiagramDialog,
+        navigate,
+        security,
     ]);
 
     const lastDiagramId = useRef<string>('');

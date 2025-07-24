@@ -359,7 +359,7 @@ export const bn: LanguageTranslation = {
             error: {
                 title: 'চিত্র রপ্তানিতে ত্রুটি',
                 description:
-                    'কিছু ভুল হয়েছে। সাহায্যের প্রয়োজন? chartdb.io@gmail.com-এ যোগাযোগ করুন।',
+                    'কিছু ভুল হয়েছে। সাহায্যের প্রয়োজন? chartdb@ya.ru-এ যোগাযোগ করুন।',
             },
         },
 
@@ -371,7 +371,7 @@ export const bn: LanguageTranslation = {
             error: {
                 title: 'চিত্র আমদানিতে ত্রুটি',
                 description:
-                    'ডায়াগ্রাম JSON অবৈধ। অনুগ্রহ করে JSON পরীক্ষা করুন এবং আবার চেষ্টা করুন। সাহায্যের প্রয়োজন? chartdb.io@gmail.com-এ যোগাযোগ করুন।',
+                    'ডায়াগ্রাম JSON অবৈধ। অনুগ্রহ করে JSON পরীক্ষা করুন এবং আবার চেষ্টা করুন। সাহায্যের প্রয়োজন? chartdb@ya.ru-এ যোগাযোগ করুন।',
             },
         },
         show_paste_code_dialog: {
@@ -410,8 +410,21 @@ export const bn: LanguageTranslation = {
 
         login: {
             welcome_header: 'Hello!',
-            username_hint: 'Student ID',
+            username_guest_hint: 'Student ID',
+            username_student_hint: 'Student email',
+            password_hint: 'Password',
             login_btn: 'Login',
+            login_as_guest_btn: 'Login as Guest',
+            login_as_student_btn: 'I have account',
+            signup_btn: 'Signup',
+            or: 'or',
+            registration_login_hint: 'student@edu.mirea.ru',
+            registration_password_hint: 'Password',
+            password_error: 'Password must be at least 8 characters long',
+            username_error: 'Email must be in domain edu.mirea.ru or mirea.ru',
+            successful_registration:
+                'Confirm your registration in the email sent to your inbox',
+            successful_confirmation: 'Registration successfully confirmed your',
         },
     },
 };

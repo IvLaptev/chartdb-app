@@ -68,8 +68,8 @@ export const Menu: React.FC<MenuProps> = () => {
     const { exportImage } = useExportImage();
     const navigate = useNavigate();
 
-    const handleDeleteDiagramAction = useCallback(() => {
-        deleteDiagram();
+    const handleDeleteDiagramAction = useCallback(async () => {
+        await deleteDiagram();
         navigate('/');
     }, [deleteDiagram, navigate]);
 

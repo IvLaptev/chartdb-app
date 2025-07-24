@@ -15,11 +15,27 @@ import {
     diagramToJSONOutput,
 } from '@/lib/export-import-utils';
 import { decodeBase64ToUtf8, encodeUtf8ToBase64 } from '@/lib/utils';
+import { PASTE_URL } from '@/lib/env';
+import { toast } from 'react-toastify';
+import { DatabaseType } from '@/lib/domain/database-type';
+import { useMutation } from 'react-query';
 
 export const StorageProvider: React.FC<React.PropsWithChildren> = ({
     children,
 }) => {
-    const { getUser } = useSecurity();
+    const { getUser, getUserType, getAuthorizationHeader } = useSecurity();
+
+    const deleteDiagramMutation = useMutation(async (id: string) => {
+        const response = await fetch(`${PASTE_URL}/chartdb/v1/diagrams/${id}`, {
+            headers: getAuthorizationHeader(),
+            method: 'DELETE',
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            toast.error(data['details'] || data['message']);
+        }
+    });
 
     const db = new Dexie('ChartDB') as Dexie & {
         diagrams: EntityTable<
@@ -282,7 +298,52 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
             includeDependencies: false,
         }
     ): Promise<Diagram[]> => {
-        let diagrams = await db.diagrams.toArray();
+        if (getUserType() !== 'GUEST') {
+            const response = await fetch(`${PASTE_URL}/chartdb/v1/diagrams`, {
+                headers: getAuthorizationHeader(),
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                toast.error(data['details'] || data['message']);
+                return [];
+            }
+
+            return data['diagrams'].map(
+                (diagram: {
+                    id: string;
+                    name: string;
+                    updatedAt: string;
+                    createdAt: string;
+                    tablesCount: number;
+                }): Diagram => {
+                    const tables: Array<DBTable> = [];
+                    for (let i = 0; i < diagram.tablesCount; i++) {
+                        tables.push({
+                            id: i.toString(),
+                            name: i.toString(),
+                            x: 0,
+                            y: 0,
+                            fields: [],
+                            indexes: [],
+                            color: '',
+                            isView: false,
+                            createdAt: 1,
+                        });
+                    }
+                    return {
+                        id: diagram.id,
+                        name: diagram.name,
+                        updatedAt: new Date(diagram.updatedAt),
+                        createdAt: new Date(diagram.createdAt),
+                        databaseType: DatabaseType.GENERIC,
+                        tables: tables,
+                    };
+                }
+            );
+        }
+
+        let diagrams: Diagram[] = await db.diagrams.toArray();
 
         if (options.includeTables) {
             diagrams = await Promise.all(
@@ -375,7 +436,8 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
 
     const deleteDiagram: StorageContext['deleteDiagram'] = async (
         id: string,
-        withSync: boolean = true
+        withSync: boolean = true,
+        local: boolean = false
     ) => {
         await Promise.all([
             db.diagrams.delete(id),
@@ -383,6 +445,11 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
             db.db_relationships.where('diagramId').equals(id).delete(),
             db.db_dependencies.where('diagramId').equals(id).delete(),
         ]);
+
+        if (getUserType() !== 'GUEST' && !local) {
+            await deleteDiagramMutation.mutate(id);
+        }
+
         if (withSync) {
             await syncDiagram(id);
         }
@@ -394,7 +461,7 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
         const metadata = await mireaDB.diagrams
             .where('uid')
             .equals(encodeUtf8ToBase64(userId))
-            .sortBy('updatedAt');
+            .toArray();
 
         for (let i = 0; i < metadata.length; i++) {
             if (!metadata[i].metadata) {

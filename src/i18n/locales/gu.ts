@@ -359,7 +359,7 @@ export const gu: LanguageTranslation = {
             error: {
                 title: 'ડાયાગ્રામ નિકાસમાં ભૂલ',
                 description:
-                    'કશુક તો ખોટું થયું. મદદ જોઈએ? chartdb.io@gmail.com પર સંપર્ક કરો.',
+                    'કશુક તો ખોટું થયું. મદદ જોઈએ? chartdb@ya.ru પર સંપર્ક કરો.',
             },
         },
 
@@ -371,7 +371,7 @@ export const gu: LanguageTranslation = {
             error: {
                 title: 'ડાયાગ્રામ આયાતમાં ભૂલ',
                 description:
-                    'ડાયાગ્રામ JSON અમાન્ય છે. કૃપા કરીને JSON તપાસો અને ફરી પ્રયાસ કરો. મદદ જોઈએ? chartdb.io@gmail.com પર સંપર્ક કરો.',
+                    'ડાયાગ્રામ JSON અમાન્ય છે. કૃપા કરીને JSON તપાસો અને ફરી પ્રયાસ કરો. મદદ જોઈએ? chartdb@ya.ru પર સંપર્ક કરો.',
             },
         },
         show_paste_code_dialog: {
@@ -410,8 +410,21 @@ export const gu: LanguageTranslation = {
 
         login: {
             welcome_header: 'Hello!',
-            username_hint: 'Student ID',
+            username_guest_hint: 'Student ID',
+            username_student_hint: 'Student email',
+            password_hint: 'Password',
             login_btn: 'Login',
+            login_as_guest_btn: 'Login as Guest',
+            login_as_student_btn: 'I have account',
+            signup_btn: 'Signup',
+            or: 'or',
+            registration_login_hint: 'student@edu.mirea.ru',
+            registration_password_hint: 'Password',
+            password_error: 'Password must be at least 8 characters long',
+            username_error: 'Email must be in domain edu.mirea.ru or mirea.ru',
+            successful_registration:
+                'Confirm your registration in the email sent to your inbox',
+            successful_confirmation: 'Registration successfully confirmed your',
         },
     },
 };

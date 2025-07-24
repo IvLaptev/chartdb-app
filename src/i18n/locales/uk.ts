@@ -359,8 +359,7 @@ export const uk: LanguageTranslation = {
             export: 'Export',
             error: {
                 title: 'Error exporting diagram',
-                description:
-                    'Something went wrong. Need help? chartdb.io@gmail.com',
+                description: 'Something went wrong. Need help? chartdb@ya.ru',
             },
         },
         // TODO: Translate
@@ -372,7 +371,7 @@ export const uk: LanguageTranslation = {
             error: {
                 title: 'Error importing diagram',
                 description:
-                    'The diagram JSON is invalid. Please check the JSON and try again. Need help? chartdb.io@gmail.com',
+                    'The diagram JSON is invalid. Please check the JSON and try again. Need help? chartdb@ya.ru',
             },
         },
         show_paste_code_dialog: {
@@ -412,8 +411,21 @@ export const uk: LanguageTranslation = {
 
         login: {
             welcome_header: 'Hello!',
-            username_hint: 'Student ID',
+            username_guest_hint: 'Student ID',
+            username_student_hint: 'Student email',
+            password_hint: 'Password',
             login_btn: 'Login',
+            login_as_guest_btn: 'Login as Guest',
+            login_as_student_btn: 'I have account',
+            signup_btn: 'Signup',
+            or: 'or',
+            registration_login_hint: 'student@edu.mirea.ru',
+            registration_password_hint: 'Password',
+            password_error: 'Password must be at least 8 characters long',
+            username_error: 'Email must be in domain edu.mirea.ru or mirea.ru',
+            successful_registration:
+                'Confirm your registration in the email sent to your inbox',
+            successful_confirmation: 'Registration successfully confirmed your',
         },
     },
 };

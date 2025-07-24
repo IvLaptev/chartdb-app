@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import useInterval from 'use-interval';
 import type { DBTable } from '@/lib/domain/db-table';
-import { deepCopy, generateId } from '@/lib/utils';
+import { deepCopy, encodeUtf8ToBase64, generateId } from '@/lib/utils';
 import { randomColor } from '@/lib/colors';
 import type { ChartDBContext, ChartDBEvent } from './chartdb-context';
 import { chartDBContext } from './chartdb-context';
@@ -22,6 +23,11 @@ import { defaultSchemas } from '@/lib/data/default-schemas';
 import { useEventEmitter } from 'ahooks';
 import type { DBDependency } from '@/lib/domain/db-dependency';
 import { storageInitialValue } from '../storage-context/storage-context';
+import { toast } from 'react-toastify';
+import { diagramToJSONOutput } from '@/lib/export-import-utils';
+import { useSecurity } from '@/hooks/use-security';
+import { PASTE_URL } from '@/lib/env';
+import { useMutation } from 'react-query';
 
 export interface ChartDBProviderProps {
     diagram?: Diagram;
@@ -31,6 +37,8 @@ export interface ChartDBProviderProps {
 export const ChartDBProvider: React.FC<
     React.PropsWithChildren<ChartDBProviderProps>
 > = ({ children, diagram, readonly }) => {
+    const security = useSecurity();
+
     let db = useStorage();
     const events = useEventEmitter<ChartDBEvent>();
     const { setSchemasFilter, schemasFilter } = useLocalConfig();
@@ -40,6 +48,7 @@ export const ChartDBProvider: React.FC<
     const [diagramName, setDiagramName] = useState('');
     const [diagramCreatedAt, setDiagramCreatedAt] = useState<Date>(new Date());
     const [diagramUpdatedAt, setDiagramUpdatedAt] = useState<Date>(new Date());
+    const [diagramSavedAt, setDiagramSavedAt] = useState<Date>(new Date());
     const [databaseType, setDatabaseType] = useState<DatabaseType>(
         DatabaseType.GENERIC
     );
@@ -59,6 +68,55 @@ export const ChartDBProvider: React.FC<
     if (readonly) {
         db = storageInitialValue;
     }
+
+    const updateDiagramMutation = useMutation(
+        async (diagramId: string): Promise<Diagram | undefined> => {
+            if (security.getUserType() === 'GUEST') {
+                return;
+            }
+
+            const diagram = await db.getDiagram(diagramId, {
+                includeDependencies: true,
+                includeRelationships: true,
+                includeTables: true,
+            });
+            if (!diagram) {
+                return;
+            }
+
+            const response = await fetch(
+                `${PASTE_URL}/chartdb/v1/diagrams/${diagramId}`,
+                {
+                    headers: security.getAuthorizationHeader(),
+                    method: 'PATCH',
+                    body: JSON.stringify({
+                        name: diagram.name,
+                        content: encodeUtf8ToBase64(
+                            diagramToJSONOutput(diagram)
+                        ),
+                        tablesCount: diagram.tables
+                            ? diagram.tables.length
+                            : null,
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                const data = await response.json();
+                toast.error(data['details'] || data['message']);
+                return;
+            }
+
+            return diagram;
+        }
+    );
+
+    useInterval(async () => {
+        if (diagramSavedAt < diagramUpdatedAt) {
+            await updateDiagramMutation.mutateAsync(diagramId);
+            setDiagramSavedAt(new Date());
+        }
+    }, 5000);
 
     const schemas = useMemo(
         () =>
@@ -120,6 +178,7 @@ export const ChartDBProvider: React.FC<
             name: diagramName,
             createdAt: diagramCreatedAt,
             updatedAt: diagramUpdatedAt,
+            savedAt: diagramSavedAt,
             databaseType,
             databaseEdition,
             tables,
@@ -136,6 +195,7 @@ export const ChartDBProvider: React.FC<
             dependencies,
             diagramCreatedAt,
             diagramUpdatedAt,
+            diagramSavedAt,
         ]
     );
 
@@ -146,6 +206,7 @@ export const ChartDBProvider: React.FC<
             setRelationships([]);
             setDependencies([]);
             setDiagramUpdatedAt(updatedAt);
+            setDiagramSavedAt(updatedAt);
 
             resetRedoStack();
             resetUndoStack();
@@ -182,6 +243,7 @@ export const ChartDBProvider: React.FC<
         useCallback(async () => {
             const updatedAt = new Date();
             setDiagramUpdatedAt(updatedAt);
+
             await db.updateDiagram({
                 id: diagramId,
                 attributes: { updatedAt },
@@ -1348,6 +1410,7 @@ export const ChartDBProvider: React.FC<
                 setDependencies(diagram?.dependencies ?? []);
                 setDiagramCreatedAt(diagram.createdAt);
                 setDiagramUpdatedAt(diagram.updatedAt);
+                setDiagramSavedAt(diagram.updatedAt);
 
                 events.emit({ action: 'load_diagram', data: { diagram } });
             },

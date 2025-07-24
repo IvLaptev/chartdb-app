@@ -357,7 +357,7 @@ export const ru: LanguageTranslation = {
             error: {
                 title: 'Ошибка экспортирования диаграммы',
                 description:
-                    'Что-то пошло не так. Если вам нужна помощь, напишите нам: chartdb.io@gmail.com',
+                    'Что-то пошло не так. Если вам нужна помощь, напишите нам: chartdb@ya.ru',
             },
         },
         import_diagram_dialog: {
@@ -368,7 +368,7 @@ export const ru: LanguageTranslation = {
             error: {
                 title: 'Ошибка при импорте диаграммы',
                 description:
-                    'Код JSON диаграммы некорректен. Проверьте, пожалуйста, код и попробуйте снова. Проблема не решается? Напишите нам: chartdb.io@gmail.com',
+                    'Код JSON диаграммы некорректен. Проверьте, пожалуйста, код и попробуйте снова. Проблема не решается? Напишите нам: chartdb@ya.ru',
             },
         },
         show_paste_code_dialog: {
@@ -408,8 +408,21 @@ export const ru: LanguageTranslation = {
 
         login: {
             welcome_header: 'Добро пожаловать!',
-            username_hint: 'Шифр зачётной книжки',
+            username_guest_hint: 'Шифр зачётной книжки',
+            username_student_hint: 'Email студента',
+            password_hint: 'Пароль',
             login_btn: 'Войти',
+            login_as_guest_btn: 'Войти как гость',
+            login_as_student_btn: 'У меня есть аккаунт',
+            signup_btn: 'Зарегистрироваться',
+            or: 'или',
+            registration_login_hint: 'student@edu.mirea.ru',
+            registration_password_hint: 'Пароль',
+            password_error: 'Пароль должен быть не менее 8 символов',
+            username_error: 'Укажите почту в домене edu.mirea.ru или mirea.ru',
+            successful_registration:
+                'Подтвердите регистрацию в письме, отправленном на вашу почту',
+            successful_confirmation: 'Регистрация успешно подтверждена',
         },
     },
 };

@@ -19,9 +19,10 @@ import { diagramFromJSONInput } from '@/lib/export-import-utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/alert/alert';
 import { AlertCircle } from 'lucide-react';
 import { Input } from '@/components/input/input';
-import { decodeBase64ToUtf8, encodeUtf8ToBase64 } from '@/lib/utils';
+import { decodeBase64ToUtf8 } from '@/lib/utils';
 import { PASTE_URL } from '@/lib/env';
 import { useSecurity } from '@/hooks/use-security';
+import { toast } from 'react-toastify';
 
 export interface ImportDiagramDialogProps extends BaseDialogProps {}
 
@@ -33,7 +34,7 @@ export const ImportDiagramDialog: React.FC<ImportDiagramDialogProps> = ({
     const { addDiagram } = useStorage();
     const navigate = useNavigate();
     const [error, setError] = useState(false);
-    const { getUser } = useSecurity();
+    const security = useSecurity();
 
     const onCodeChange = useCallback((code: string) => {
         if (code.length === 0) {
@@ -55,48 +56,45 @@ export const ImportDiagramDialog: React.FC<ImportDiagramDialogProps> = ({
         if (!code) return;
 
         try {
-            const headers = new Headers();
-            headers.append('x-user-id', encodeUtf8ToBase64(getUser() ?? ''));
-            const resp = await fetch(`${PASTE_URL}/api/diagrams/${code}`, {
-                method: 'GET',
-                headers: headers,
-            });
-
-            if (resp.status !== 200) {
-                throw 'failed to save diagram';
-            }
-            const respJSON = await resp.json();
-            const encodedDiagram = respJSON['content'];
-
-            console.log(encodedDiagram);
-            console.log(decodeBase64ToUtf8(encodedDiagram));
-            console.log(
-                diagramFromJSONInput(decodeBase64ToUtf8(encodedDiagram))
+            const resp = await fetch(
+                `${PASTE_URL}/chartdb/v1/diagrams/${code}`,
+                {
+                    headers: security.getAuthorizationHeader(),
+                }
             );
+
+            const data = await resp.json();
+            if (!resp.ok) {
+                toast.error(data['details'] || data['message']);
+            }
+            const encodedDiagram = data['content'];
 
             const diagram = diagramFromJSONInput(
                 decodeBase64ToUtf8(encodedDiagram)
             );
 
-            await addDiagram({ diagram });
+            if (security.getUserType() !== 'GUEST') {
+                navigate(`/diagrams/${data['metadata']['id']}`);
+            } else {
+                await addDiagram({ diagram });
+                navigate(`/diagrams/${diagram.id}`);
+            }
 
             closeImportDiagramDialog();
             closeCreateDiagramDialog();
-
-            navigate(`/diagrams/${diagram.id}`);
         } catch (e) {
-            console.log(e);
+            console.error(e);
             setError(true);
 
             throw e;
         }
     }, [
         code,
-        getUser,
         addDiagram,
         navigate,
         closeImportDiagramDialog,
         closeCreateDiagramDialog,
+        security,
     ]);
 
     return (

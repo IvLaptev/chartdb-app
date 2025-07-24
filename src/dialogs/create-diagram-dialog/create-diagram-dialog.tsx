@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useConfig } from '@/hooks/use-config';
 import type { DatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
 import { loadDatabaseMetadata } from '@/lib/data/import-metadata/metadata-types/database-metadata';
-import { generateDiagramId } from '@/lib/utils';
+import { encodeUtf8ToBase64, generateDiagramId } from '@/lib/utils';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useDialog } from '@/hooks/use-dialog';
 import type { DatabaseEdition } from '@/lib/domain/database-edition';
@@ -17,13 +17,19 @@ import { CreateDiagramDialogStep } from './create-diagram-dialog-step';
 import { ImportDatabase } from '../common/import-database/import-database';
 import { useTranslation } from 'react-i18next';
 import type { BaseDialogProps } from '../common/base-dialog-props';
+import { useSecurity } from '@/hooks/use-security';
+import { useMutation } from 'react-query';
+import { PASTE_URL } from '@/lib/env';
+import { toast } from 'react-toastify';
+import { diagramToJSONOutput } from '@/lib/export-import-utils';
 
 export interface CreateDiagramDialogProps extends BaseDialogProps {}
 
 export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
     dialog,
 }) => {
-    const { diagramId } = useChartDB();
+    const security = useSecurity();
+    const { diagramId, loadDiagram } = useChartDB();
     const { t } = useTranslation();
     const [databaseType, setDatabaseType] = useState<DatabaseType>(
         DatabaseType.GENERIC
@@ -55,6 +61,40 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
         setDatabaseEdition(undefined);
         setScriptResult('');
     }, [dialog.open]);
+
+    const createDiagramMutation = useMutation(
+        async (diagram: Diagram): Promise<Diagram | undefined> => {
+            let tablesCount = 0;
+            if (diagram.tables) {
+                tablesCount = diagram.tables.length;
+            }
+
+            const encodedJson = encodeUtf8ToBase64(
+                diagramToJSONOutput(diagram)
+            );
+
+            const response = await fetch(`${PASTE_URL}/chartdb/v1/diagrams`, {
+                method: 'POST',
+                headers: security.getAuthorizationHeader(),
+                body: JSON.stringify({
+                    clientDiagramId: diagram.id.slice(8),
+                    content: encodedJson,
+                    name: diagram.name,
+                    tablesCount: tablesCount,
+                }),
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                toast.error(data['details'] || data['message']);
+                return;
+            }
+
+            diagram.id = data.id;
+
+            return diagram;
+        }
+    );
 
     const hasExistingDiagram = (diagramId ?? '').trim().length !== 0;
 
@@ -100,8 +140,17 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
             updatedAt: new Date(),
         };
 
+        if (security.getUserType() !== 'GUEST') {
+            const savedDiagram =
+                await createDiagramMutation.mutateAsync(diagram);
+            if (!savedDiagram) {
+                return;
+            }
+            diagram.id = savedDiagram.id;
+        }
+
         await addDiagram({ diagram });
-        await updateConfig({ defaultDiagramId: diagram.id });
+        await loadDiagram(diagram.id);
         closeCreateDiagramDialog();
         navigate(`/diagrams/${diagram.id}`);
     }, [
@@ -110,8 +159,10 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
         databaseEdition,
         closeCreateDiagramDialog,
         navigate,
-        updateConfig,
         diagramNumber,
+        createDiagramMutation,
+        security,
+        loadDiagram,
     ]);
 
     return (

@@ -22,18 +22,19 @@ import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/alert/alert';
 import { useSecurity } from '@/hooks/use-security';
 import { PASTE_URL } from '@/lib/env';
+import { toast } from 'react-toastify';
 
 export interface ExportDiagramDialogProps extends BaseDialogProps {}
 
 export const ExportDiagramDialog: React.FC<ExportDiagramDialogProps> = ({
     dialog,
 }) => {
+    const security = useSecurity();
     const { t } = useTranslation();
     const { diagramName, currentDiagram } = useChartDB();
     const [isLoading, setIsLoading] = useState(false);
     const { closeExportDiagramDialog, openShowPasteCodeDialog } = useDialog();
     const [error, setError] = useState(false);
-    const { getUser } = useSecurity();
     const [outputTypeOption, setOutputTypeOption] = useState<string>('code');
 
     useEffect(() => {
@@ -78,28 +79,47 @@ export const ExportDiagramDialog: React.FC<ExportDiagramDialogProps> = ({
                 diagramToJSONOutput(currentDiagram)
             );
 
-            const headers = new Headers();
-            headers.append('x-user-id', encodeUtf8ToBase64(getUser() ?? ''));
-            const resp = await fetch(`${PASTE_URL}/api/diagrams`, {
-                method: 'POST',
-                body: JSON.stringify({
-                    content: encodedJson,
-                    client_diagram_id: currentDiagram.id.slice(8),
-                }),
-                headers: headers,
-            });
-
-            if (resp.status !== 200) {
-                throw 'failed to save diagram';
+            let resp: Response;
+            if (security.getUserType() === 'GUEST') {
+                resp = await fetch(`${PASTE_URL}/chartdb/v1/diagrams`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        content: encodedJson,
+                        name: currentDiagram.name,
+                        tables_count: currentDiagram.tables
+                            ? currentDiagram.tables.length
+                            : 0,
+                        client_diagram_id: currentDiagram.id.slice(8),
+                    }),
+                    headers: security.getAuthorizationHeader(),
+                });
+            } else {
+                resp = await fetch(
+                    `${PASTE_URL}/chartdb/v1/diagrams/${currentDiagram.id}`,
+                    {
+                        headers: security.getAuthorizationHeader(),
+                    }
+                );
             }
-            const respJSON = await resp.json();
-            const code = respJSON['code'];
+
+            const data = await resp.json();
+            if (!resp.ok) {
+                toast.error(data['details'] || data['message']);
+            } else {
+                let code = '';
+                if (data['metadata']) {
+                    code = data['metadata']['code'];
+                }
+                if (data['code']) {
+                    code = data['code'];
+                }
+                openShowPasteCodeDialog({ code: code });
+            }
 
             setIsLoading(false);
             closeExportDiagramDialog();
-            openShowPasteCodeDialog({ code: code });
         } catch (e) {
-            console.log(e);
+            console.error(e);
             setError(true);
             setIsLoading(false);
 
@@ -107,9 +127,9 @@ export const ExportDiagramDialog: React.FC<ExportDiagramDialogProps> = ({
         }
     }, [
         currentDiagram,
-        getUser,
         closeExportDiagramDialog,
         openShowPasteCodeDialog,
+        security,
     ]);
 
     const handleExport = useCallback(async () => {

@@ -33,7 +33,11 @@ export interface StorageContext {
         id: string;
         attributes: Partial<Diagram>;
     }) => Promise<void>;
-    deleteDiagram: (id: string, withSync?: boolean) => Promise<void>;
+    deleteDiagram: (
+        id: string,
+        withSync?: boolean,
+        local?: boolean
+    ) => Promise<void>;
     loadUserDiagrams: (userId: string) => Promise<void>;
 
     // Table operations

@@ -350,8 +350,7 @@ export const zh_TW: LanguageTranslation = {
             // TODO: Translate
             error: {
                 title: 'Error exporting diagram',
-                description:
-                    'Something went wrong. Need help? chartdb.io@gmail.com',
+                description: 'Something went wrong. Need help? chartdb@ya.ru',
             },
         },
 
@@ -363,7 +362,7 @@ export const zh_TW: LanguageTranslation = {
             error: {
                 title: '匯入圖表時發生錯誤',
                 description:
-                    '圖表的 JSON 無效。請檢查 JSON 並再試一次。如需幫助，請聯繫 chartdb.io@gmail.com',
+                    '圖表的 JSON 無效。請檢查 JSON 並再試一次。如需幫助，請聯繫 chartdb@ya.ru',
             },
         },
 
@@ -403,8 +402,21 @@ export const zh_TW: LanguageTranslation = {
 
         login: {
             welcome_header: 'Hello!',
-            username_hint: 'Student ID',
+            username_guest_hint: 'Student ID',
+            username_student_hint: 'Student email',
+            password_hint: 'Password',
             login_btn: 'Login',
+            login_as_guest_btn: 'Login as Guest',
+            login_as_student_btn: 'I have account',
+            signup_btn: 'Signup',
+            or: 'or',
+            registration_login_hint: 'student@edu.mirea.ru',
+            registration_password_hint: 'Password',
+            password_error: 'Password must be at least 8 characters long',
+            username_error: 'Email must be in domain edu.mirea.ru or mirea.ru',
+            successful_registration:
+                'Confirm your registration in the email sent to your inbox',
+            successful_confirmation: 'Registration successfully confirmed your',
         },
     },
 };
