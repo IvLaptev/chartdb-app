@@ -41,20 +41,24 @@ export const LoginComponent: React.FC = () => {
         let token: string | null = null;
         let userId: string = '';
         if (loginAsGuestEnabled) {
-            const result = await fetch(`${PASTE_URL}/chartdb/v1/users`, {
-                method: 'POST',
-                body: JSON.stringify({ login: username, password }),
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
+            try {
+                const result = await fetch(`${PASTE_URL}/chartdb/v1/users`, {
+                    method: 'POST',
+                    body: JSON.stringify({ login: username, password }),
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
 
-            const data = await result.json();
-            if (!result.ok) {
-                toast.error(data['details'] || data['message']);
+                const data = await result.json();
+                if (!result.ok) {
+                    toast.error(data['details'] || data['message']);
+                }
+            } catch (error) {
+                console.error(error);
             }
 
-            userId = data['id'];
+            userId = username;
         } else {
             if (!emailRegex.test(username)) {
                 setUsernameError(t('login.username_error'));
