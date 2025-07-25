@@ -18,7 +18,7 @@ import { t } from 'i18next';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useMutation, useQuery } from 'react-query';
 import { toast } from 'react-toastify';
-// import { useKeyPressEvent } from 'react-use';
+import { useKeyPressEvent } from 'react-use';
 
 const emailRegex = /^\S+@(mirea.ru|edu.mirea.ru)$/;
 
@@ -191,7 +191,17 @@ export const LoginComponent: React.FC = () => {
         return loginMutation.isLoading || registerMutation.isLoading;
     }, [loginMutation.isLoading, registerMutation.isLoading]);
 
-    // useKeyPressEvent('Enter', login);
+    useKeyPressEvent('Enter', () => {
+        if (isLoading()) {
+            return;
+        }
+
+        if (registrationModeEnabled) {
+            registerMutation.mutate();
+        } else {
+            loginMutation.mutate();
+        }
+    });
 
     return (
         <>
