@@ -2,6 +2,11 @@ import { Button } from '@/components/button/button';
 import { Card } from '@/components/card/card';
 import { Input } from '@/components/input/input';
 import { Spinner } from '@/components/spinner/spinner';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/tooltip/tooltip';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
 import { StorageProvider } from '@/context/storage-context/storage-provider';
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
@@ -309,21 +314,32 @@ export const LoginComponent: React.FC = () => {
                             </p>
                             <div className="h-px w-full bg-gray-300 dark:bg-[#1e293b]"></div>
                         </div>
-                        <Button
-                            type="button"
-                            onClick={() => {
-                                toggleLoginAsGuestEnabled(!loginAsGuestEnabled);
-                                toggleRegistrationModeEnabled(false);
-                                flush();
-                            }}
-                            disabled={isLoading()}
-                            variant={'secondary'}
-                            className="mb-6 ml-auto h-10 w-full"
-                        >
-                            {loginAsGuestEnabled
-                                ? t('login.login_as_student_btn')
-                                : t('login.login_as_guest_btn')}
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    type="button"
+                                    onClick={() => {
+                                        toggleLoginAsGuestEnabled(
+                                            !loginAsGuestEnabled
+                                        );
+                                        toggleRegistrationModeEnabled(false);
+                                        flush();
+                                    }}
+                                    disabled={isLoading()}
+                                    variant={'secondary'}
+                                    className="mb-6 ml-auto h-10 w-full"
+                                >
+                                    {loginAsGuestEnabled
+                                        ? t('login.login_as_student_btn')
+                                        : t('login.login_as_guest_btn')}
+                                </Button>
+                            </TooltipTrigger>
+                            {!loginAsGuestEnabled && (
+                                <TooltipContent>
+                                    <p>{t('login.login_as_guest_tooltip')}</p>
+                                </TooltipContent>
+                            )}
+                        </Tooltip>
                     </div>
                 </Card>
             </section>

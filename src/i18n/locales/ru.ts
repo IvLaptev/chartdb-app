@@ -423,6 +423,8 @@ export const ru: LanguageTranslation = {
             successful_registration:
                 'Подтвердите регистрацию в письме, отправленном на вашу почту',
             successful_confirmation: 'Регистрация успешно подтверждена',
+            login_as_guest_tooltip:
+                'Автосохранение диаграмм отключено в режиме гостя',
         },
     },
 };

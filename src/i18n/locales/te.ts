@@ -432,6 +432,8 @@ export const te: LanguageTranslation = {
             successful_registration:
                 'Confirm your registration in the email sent to your inbox',
             successful_confirmation: 'Registration successfully confirmed your',
+            login_as_guest_tooltip:
+                'Auto saving of diagrams is disabled in guest mode',
         },
     },
 };

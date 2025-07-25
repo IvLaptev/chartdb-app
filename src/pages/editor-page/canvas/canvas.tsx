@@ -37,7 +37,7 @@ import {
 } from './table-node/table-node-field';
 import { Toolbar } from './toolbar/toolbar';
 import { useToast } from '@/components/toast/use-toast';
-import { Pencil, LayoutGrid, AlertTriangle, Magnet } from 'lucide-react';
+import { Pencil, LayoutGrid, AlertTriangle, Magnet, User } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { useLayout } from '@/hooks/use-layout';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
@@ -76,6 +76,9 @@ import {
 } from './table-node/table-node-dependency-indicator';
 import { DatabaseType } from '@/lib/domain/database-type';
 import { useAlert } from '@/context/alert-context/alert-context';
+import { useSecurity } from '@/hooks/use-security';
+import { useQuery } from 'react-query';
+import { PASTE_URL } from '@/lib/env';
 
 export type EdgeType = RelationshipEdgeType | DependencyEdgeType;
 
@@ -108,7 +111,16 @@ export interface CanvasProps {
     readonly?: boolean;
 }
 
+interface DiagramMeta {
+    name: string;
+    userName: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 export const Canvas: React.FC<CanvasProps> = ({ initialTables, readonly }) => {
+    const security = useSecurity();
+
     const { getEdge, getInternalNode, fitView, getEdges, getNode } =
         useReactFlow();
     const [selectedTableIds, setSelectedTableIds] = useState<string[]>([]);
@@ -130,6 +142,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables, readonly }) => {
         filteredSchemas,
         events,
         dependencies,
+        currentDiagram,
     } = useChartDB();
     const { showSidePanel } = useLayout();
     const { effectiveTheme } = useTheme();
@@ -152,6 +165,51 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables, readonly }) => {
         useEdgesState<EdgeType>(initialEdges);
 
     const [snapToGridEnabled, setSnapToGridEnabled] = useState(false);
+
+    const { data: diagramMeta } = useQuery(
+        currentDiagram?.id,
+        async (): Promise<DiagramMeta | undefined> => {
+            if (!currentDiagram?.id) {
+                return;
+            }
+
+            if (
+                security.getUserType() === 'GUEST' ||
+                security.getUserType() === 'STUDENT'
+            ) {
+                return;
+            }
+
+            let response = await fetch(
+                `${PASTE_URL}/chartdb/v1/diagrams/${currentDiagram?.id}`,
+                {
+                    headers: security.getAuthorizationHeader(),
+                }
+            );
+            const diagramData = await response.json();
+            if (!response.ok) {
+                return;
+            }
+
+            response = await fetch(
+                `${PASTE_URL}/chartdb/v1/users/${diagramData['metadata']['userId']}`,
+                {
+                    headers: security.getAuthorizationHeader(),
+                }
+            );
+            const userData = await response.json();
+            if (!response.ok) {
+                return;
+            }
+
+            return {
+                name: diagramData['metadata']['name'],
+                userName: userData['login'],
+                createdAt: new Date(diagramData['metadata']['createdAt']),
+                updatedAt: new Date(diagramData['metadata']['updatedAt']),
+            };
+        }
+    );
 
     useEffect(() => {
         setIsInitialLoadingNodes(true);
@@ -744,7 +802,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables, readonly }) => {
                         showInteractive={false}
                         className="!shadow-none"
                     >
-                        <div className="flex flex-col items-center gap-2 md:flex-row">
+                        <div className="flex w-full flex-col items-center gap-2 md:flex-row">
                             {!readonly ? (
                                 <>
                                     <Tooltip>
@@ -827,6 +885,50 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables, readonly }) => {
                             </div>
                         </div>
                     </Controls>
+                    {diagramMeta && (
+                        <Controls
+                            position="top-right"
+                            showZoom={false}
+                            showFitView={false}
+                            showInteractive={false}
+                            className="!shadow-none"
+                        >
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span>
+                                        <Button
+                                            variant="secondary"
+                                            className={cn(
+                                                'size-8 p-1 shadow-none ml-auto',
+                                                snapToGridEnabled ||
+                                                    shiftPressed
+                                                    ? 'bg-pink-600 text-white hover:bg-pink-500 dark:hover:bg-pink-700 hover:text-white'
+                                                    : ''
+                                            )}
+                                        >
+                                            <User className="size-4" />
+                                        </Button>
+                                    </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">
+                                    <table className="table-fixed">
+                                        <tbody>
+                                            <tr>
+                                                <td>Выполнил</td>
+                                                <td>{diagramMeta.userName}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Последнее изменение</td>
+                                                <td>
+                                                    {diagramMeta.updatedAt.toLocaleString()}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </TooltipContent>
+                            </Tooltip>
+                        </Controls>
+                    )}
                     {isLoadingDOM ? (
                         <Controls
                             position="top-center"

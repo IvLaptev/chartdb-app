@@ -28,8 +28,8 @@ import { useTranslation } from 'react-i18next';
 import { useLayout } from '@/hooks/use-layout';
 import { useTheme } from '@/hooks/use-theme';
 import { useLocalConfig } from '@/hooks/use-local-config';
-import { useNavigate } from 'react-router-dom';
 import { useAlert } from '@/context/alert-context/alert-context';
+import { useStorage } from '@/hooks/use-storage';
 
 export interface MenuProps {}
 
@@ -49,6 +49,7 @@ export const Menu: React.FC<MenuProps> = () => {
         openExportDiagramDialog,
         openImportDiagramDialog,
     } = useDialog();
+    const db = useStorage();
     const { showAlert } = useAlert();
     const { setTheme, theme } = useTheme();
     const { hideSidePanel, isSidePanelShowed, showSidePanel } = useLayout();
@@ -66,12 +67,17 @@ export const Menu: React.FC<MenuProps> = () => {
     const { redo, undo, hasRedo, hasUndo } = useHistory();
     const { config, updateConfig } = useConfig();
     const { exportImage } = useExportImage();
-    const navigate = useNavigate();
 
     const handleDeleteDiagramAction = useCallback(async () => {
         await deleteDiagram();
-        navigate('/');
-    }, [deleteDiagram, navigate]);
+
+        const diagrams = await db.listDiagrams();
+        if (diagrams.length === 0) {
+            openCreateDiagramDialog();
+        } else {
+            openOpenDiagramDialog();
+        }
+    }, [deleteDiagram, openCreateDiagramDialog, openOpenDiagramDialog, db]);
 
     const createNewDiagram = () => {
         openCreateDiagramDialog();
