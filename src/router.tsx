@@ -1,6 +1,6 @@
 import React from 'react';
 import type { RouteObject } from 'react-router-dom';
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import type { TemplatePageLoaderData } from './pages/template-page/template-page';
 import type { TemplatesPageLoaderData } from './pages/templates-page/templates-page';
 import { getTemplatesAndAllTags } from './templates-data/template-utils';
@@ -140,14 +140,7 @@ const routes: RouteObject[] = [
     },
     {
         path: '*',
-        async lazy() {
-            const { NotFoundPage } = await import(
-                './pages/not-found-page/not-found-page'
-            );
-            return {
-                element: <NotFoundPage />,
-            };
-        },
+        element: <Navigate to="/" replace />,
     },
 ];
 
