@@ -29,7 +29,7 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
     dialog,
 }) => {
     const security = useSecurity();
-    const { diagramId, loadDiagram } = useChartDB();
+    const { diagramId } = useChartDB();
     const { t } = useTranslation();
     const [databaseType, setDatabaseType] = useState<DatabaseType>(
         DatabaseType.GENERIC
@@ -150,7 +150,6 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
         }
 
         await addDiagram({ diagram });
-        await loadDiagram(diagram.id);
         closeCreateDiagramDialog();
         navigate(`/diagrams/${diagram.id}`);
     }, [
@@ -162,7 +161,6 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
         diagramNumber,
         createDiagramMutation,
         security,
-        loadDiagram,
     ]);
 
     return (

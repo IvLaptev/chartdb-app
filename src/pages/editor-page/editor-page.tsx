@@ -64,7 +64,11 @@ const EditorPageComponent: React.FC = () => {
     const { openSelectSchema, showSidePanel } = useLayout();
     const { resetRedoStack, resetUndoStack } = useRedoUndoStack();
     const { showLoader, hideLoader } = useFullScreenLoader();
-    const { openCreateDiagramDialog, openOpenDiagramDialog } = useDialog();
+    const {
+        openCreateDiagramDialog,
+        openOpenDiagramDialog,
+        closeOpenDiagramDialog,
+    } = useDialog();
     const { diagramId } = useParams<{ diagramId: string }>();
     const navigate = useNavigate();
     const { isMd: isDesktop } = useBreakpoint('md');
@@ -98,6 +102,11 @@ const EditorPageComponent: React.FC = () => {
         [diagramId],
         async (): Promise<Diagram | undefined> => {
             const id = diagramId || currentDiagram?.id;
+
+            console.log('id', id);
+            console.log('usedDiagram', usedDiagram);
+            console.log('currentDiagram', currentDiagram);
+            console.log('diagramId', diagramId);
 
             if (!id) {
                 setUsedDiagram(undefined);
@@ -171,23 +180,24 @@ const EditorPageComponent: React.FC = () => {
         diagramId,
         isDiagramLoading,
         isUserDiagramsLoading,
-        usedDiagram?.id,
+        usedDiagram,
         currentDiagram?.id,
         resetRedoStack,
         resetUndoStack,
         showLoader,
         hideLoader,
         setInitialDiagram,
-        usedDiagram,
+        closeOpenDiagramDialog,
     ]);
 
-    useEffect(() => {
-        if (isDiagramLoading || isUserDiagramsLoading) {
-            return;
-        }
+    useQuery(
+        [isDiagramLoading, isUserDiagramsLoading, usedDiagram, security],
+        async () => {
+            if (isDiagramLoading || isUserDiagramsLoading) {
+                return;
+            }
 
-        const startUp = async () => {
-            if (!usedDiagram && !diagramId) {
+            if (!usedDiagram) {
                 const diagrams = await listDiagrams();
 
                 if (diagrams.length > 0) {
@@ -201,19 +211,8 @@ const EditorPageComponent: React.FC = () => {
                     openCreateDiagramDialog();
                 }
             }
-        };
-        startUp();
-    }, [
-        diagramId,
-        usedDiagram,
-        isDiagramLoading,
-        isUserDiagramsLoading,
-        listDiagrams,
-        openOpenDiagramDialog,
-        openCreateDiagramDialog,
-        navigate,
-        security,
-    ]);
+        }
+    );
 
     const lastDiagramId = useRef<string>('');
 
