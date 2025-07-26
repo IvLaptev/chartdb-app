@@ -103,11 +103,6 @@ const EditorPageComponent: React.FC = () => {
         async (): Promise<Diagram | undefined> => {
             const id = diagramId || currentDiagram?.id;
 
-            console.log('id', id);
-            console.log('usedDiagram', usedDiagram);
-            console.log('currentDiagram', currentDiagram);
-            console.log('diagramId', diagramId);
-
             if (!id) {
                 setUsedDiagram(undefined);
                 return;

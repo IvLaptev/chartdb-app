@@ -166,50 +166,51 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables, readonly }) => {
 
     const [snapToGridEnabled, setSnapToGridEnabled] = useState(false);
 
-    const { data: diagramMeta } = useQuery(
-        currentDiagram?.id,
-        async (): Promise<DiagramMeta | undefined> => {
-            if (!currentDiagram?.id) {
-                return;
-            }
+    const [diagramMeta, setDiagramMeta] = useState<DiagramMeta | undefined>();
 
-            if (
-                security.getUserType() === 'GUEST' ||
-                security.getUserType() === 'STUDENT'
-            ) {
-                return;
-            }
-
-            let response = await fetch(
-                `${PASTE_URL}/chartdb/v1/diagrams/${currentDiagram?.id}`,
-                {
-                    headers: security.getAuthorizationHeader(),
-                }
-            );
-            const diagramData = await response.json();
-            if (!response.ok) {
-                return;
-            }
-
-            response = await fetch(
-                `${PASTE_URL}/chartdb/v1/users/${diagramData['metadata']['userId']}`,
-                {
-                    headers: security.getAuthorizationHeader(),
-                }
-            );
-            const userData = await response.json();
-            if (!response.ok) {
-                return;
-            }
-
-            return {
-                name: diagramData['metadata']['name'],
-                userName: userData['login'],
-                createdAt: new Date(diagramData['metadata']['createdAt']),
-                updatedAt: new Date(diagramData['metadata']['updatedAt']),
-            };
+    useQuery(currentDiagram?.id, async (): Promise<DiagramMeta | undefined> => {
+        if (!currentDiagram?.id) {
+            return;
         }
-    );
+
+        if (
+            security.getUserType() === 'GUEST' ||
+            security.getUserType() === 'STUDENT'
+        ) {
+            return;
+        }
+
+        let response = await fetch(
+            `${PASTE_URL}/chartdb/v1/diagrams/${currentDiagram?.id}`,
+            {
+                headers: security.getAuthorizationHeader(),
+            }
+        );
+        const diagramData = await response.json();
+        if (!response.ok) {
+            console.error(response.statusText);
+            return;
+        }
+
+        response = await fetch(
+            `${PASTE_URL}/chartdb/v1/users/${diagramData['metadata']['userId']}`,
+            {
+                headers: security.getAuthorizationHeader(),
+            }
+        );
+        const userData = await response.json();
+        if (!response.ok) {
+            console.error(response.statusText);
+            return;
+        }
+
+        setDiagramMeta({
+            name: diagramData['metadata']['name'],
+            userName: userData['login'],
+            createdAt: new Date(diagramData['metadata']['createdAt']),
+            updatedAt: new Date(diagramData['metadata']['updatedAt']),
+        });
+    });
 
     useEffect(() => {
         setIsInitialLoadingNodes(true);
