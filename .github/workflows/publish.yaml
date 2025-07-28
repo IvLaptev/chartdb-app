@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - 'v*'
+    branches: 
+      - "main"
 
 env:
   REGISTRY: ghcr.io
@@ -35,25 +37,49 @@ jobs:
       - name: Build project
         run: VITE_PASTE_URL=https://${{ secrets.API_URL }} npm run build
 
-      - name: Deploy JS
-        uses: prewk/s3-cp-action@v2
-        with:
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          source: './dist'
-          aws_region: 'ru-central1'
-          aws_s3_endpoint: 'https://storage.yandexcloud.net'
-          dest: 's3://chartdb.mirea.dev'
-          flags: --recursive --include "*.js" --content-type "application/javascript"
+      - name: Build the Docker image
+        run: |
+          docker build . --tag chartdb_front:latest --build-arg VITE_PASTE_URL=${{ secrets.API_URL }}
 
-      - name: Deploy Statics
-        uses: prewk/s3-cp-action@v2
+      - name: Set version timestamp
+        run: echo "VERSION=$(date +%s)" >> $GITHUB_ENV
+        
+      - name: Tag image
+        run: |
+          docker tag chartdb_front:latest cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_front:latest
+          docker tag chartdb_front:latest cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_front:${{ env.VERSION }}
+
+      - name: Login to Yandex Cloud Container Registry
+        id: login-cr
+        uses: yc-actions/yc-cr-login@v3
         with:
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          source: './dist'
-          aws_region: 'ru-central1'
-          aws_s3_endpoint: 'https://storage.yandexcloud.net'
-          dest: 's3://chartdb.mirea.dev'
-          flags: --recursive --exclude "*.js"
+          yc-sa-json-credentials: ${{ secrets.YC_KEY }}
+
+      - name: Push image
+        run: |
+          docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_front:latest
+          docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_front:${{ env.VERSION }}
+
+
+      # - name: Deploy JS
+      #   uses: prewk/s3-cp-action@v2
+      #   with:
+      #     aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     source: './dist'
+      #     aws_region: 'ru-central1'
+      #     aws_s3_endpoint: 'https://storage.yandexcloud.net'
+      #     dest: 's3://chartdb.mirea.dev'
+      #     flags: --recursive --include "*.js" --content-type "application/javascript"
+
+      # - name: Deploy Statics
+      #   uses: prewk/s3-cp-action@v2
+      #   with:
+      #     aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     source: './dist'
+      #     aws_region: 'ru-central1'
+      #     aws_s3_endpoint: 'https://storage.yandexcloud.net'
+      #     dest: 's3://chartdb.mirea.dev'
+      #     flags: --recursive --exclude "*.js"
           

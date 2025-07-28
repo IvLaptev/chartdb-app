@@ -1,6 +1,7 @@
 FROM node:22-alpine AS builder
 
 ARG VITE_OPENAI_API_KEY
+ARG VITE_VITE_PASTE_URL
 
 WORKDIR /usr/src/app
 
